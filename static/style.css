@@ -74,6 +74,17 @@ form button,.btn{width:auto}
 .pill{display:inline-block;padding:.1rem .55rem;border-radius:99px;background:var(--border);font-size:.78rem;margin-left:.35rem}
 .pill.ok{background:#d1fae5;color:#065f46}.pill.warn{background:#fef3c7;color:#92400e}
 .pill.bad{background:#fee2e2;color:#991b1b}
+/* Payment method cards */
+.pm-card{border:2px solid var(--border);border-radius:12px;padding:1rem;margin:.6rem 0;background:var(--card)}
+.pm-card.default{border-color:var(--brand);background:var(--flash)}
+.pm-type{font-size:1.3rem;margin-right:.5rem}
+.pm-actions{margin-top:.6rem;display:flex;gap:.4rem}
+.payment-hint{font-size:.85rem;color:var(--muted);margin-top:.2rem}
+[data-theme="dark"] .pm-card.default{background:#10261f}
+/* Radio label alignment */
+form label input[type=radio]{width:auto;display:inline-block;margin:.2rem .4rem 0 0}
+form label input[type=radio]+span{margin-left:.2rem}
+form div[id^="pm-"] label{margin:.4rem 0}
 .reviewnote{margin:.6rem 0 0;padding:.6rem .8rem;background:#fff8e6;border-left:3px solid #f0ad4e;border-radius:8px;font-size:.9rem}
 [data-theme="dark"] .pill.ok{background:#064e3b;color:#a7f3d0}[data-theme="dark"] .pill.warn{background:#78350f;color:#fde68a}
 [data-theme="dark"] .pill.bad{background:#7f1d1d;color:#fecaca}

@@ -1,8 +1,57 @@
-{% extends "base.html" %}
-{% block content %}
-<h1>Checkout — Total {{ total }}</h1>
-<form method="post"><input type="hidden" name="csrf_token" value="{{ csrf }}">
-<input name="name" placeholder="Full name" required><input name="phone" placeholder="Phone" required><input name="email" placeholder="Email"><input name="address" placeholder="Address" required><input name="city" value="Juba"><textarea name="notes" placeholder="Notes"></textarea>
-<select name="payment"><option>Cash on Delivery</option><option>MTN MoMo</option><option>Bank Transfer</option></select>
-<button class="btn">Place order</button></form>
+{% extends "base.html" %}{% block content %}
+<h1>Checkout — Total {{ total }} {{ site.get('currency','SSP') }}</h1>
+
+{% if user %}
+<div class="card">
+  <h3>💳 Choose Payment Method</h3>
+  <p class="muted">Select how you want to pay. Non-COD payments require uploading a receipt after placing the order.</p>
+  <form method="post"><input type="hidden" name="csrf_token" value="{{ csrf }}">
+    <label>
+      <input type="radio" name="chosen_payment" value="cod" checked> 🚚 Pay on Delivery
+    </label>
+    {% for pm in pms %}
+    <label style="margin-left:1rem">
+      <input type="radio" name="chosen_payment" value="{{ pm.id }}">
+      {{ pm.label }}
+    </label>
+    {% endfor %}
+    <label style="margin-left:1rem">
+      <input type="radio" name="chosen_payment" value="new"> ➕ Add new at checkout
+    </label>
+    <div id="pm-new" style="margin-top:.8rem;padding-top:.8rem;border-top:1px solid var(--border)">
+      <label>New method
+        <select name="payment" required>
+          <option value="Cash on Delivery">Cash on Delivery</option>
+          <option value="MTN MoMo">MTN Mobile Money</option>
+          <option value="Airtel Money">Airtel Money</option>
+          <option value="Bank Transfer">Bank Transfer</option>
+          <option value="Visa Card">Visa Card</option>
+        </select>
+      </label>
+    </div>
+    <div class="frow">
+      <input name="name" placeholder="Full name" required>
+      <input name="phone" placeholder="Phone" required>
+      <input name="email" placeholder="Email">
+      <input name="address" placeholder="Address" required>
+      <input name="city" value="Juba">
+    </div>
+    <textarea name="notes" placeholder="Notes"></textarea>
+    <button class="btn" type="submit">Place order</button>
+  </form>
+  <script>
+    document.querySelectorAll('input[name="chosen_payment"]').forEach(function(r){
+      r.addEventListener('change', function(){
+        document.getElementById('pm-new').style.display = this.value === 'new' ? 'block' : 'none';
+        document.querySelector('select[name="payment"]').required = this.value === 'new';
+      });
+    });
+  </script>
+</div>
+{% else %}
+<div class="card">
+  <h3>💳 Checkout</h3>
+  <p class="muted">Please <a href="{{ url_for('login') }}">log in</a> to place an order and choose a payment method.</p>
+</div>
+{% endif %}
 {% endblock %}

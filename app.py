@@ -66,6 +66,29 @@ def init_db():
                    (id INTEGER PRIMARY KEY AUTOINCREMENT, customer_name TEXT, email TEXT,
                     phone TEXT, address TEXT, city TEXT, notes TEXT,
                     items_json TEXT, total REAL, status TEXT DEFAULT 'pending', created TEXT)""")
+    # payment columns migration (idempotent)
+    _cols = [r["name"] for r in con.execute("PRAGMA table_info(orders)").fetchall()]
+    for _col, _def in [
+        ("payment_method", "TEXT"),
+        ("payment_status", "TEXT DEFAULT 'pending'"),
+        ("payment_reference", "TEXT"),
+        ("receipt_path", "TEXT"),
+        ("paid_at", "TEXT"),
+    ]:
+        if _col not in _cols:
+            con.execute(f"ALTER TABLE orders ADD COLUMN {_col} {_def}")
+    con.execute("""CREATE TABLE IF NOT EXISTS admin_payments (
+                   id INTEGER PRIMARY KEY AUTOINCREMENT,
+                   type TEXT DEFAULT 'ad_fee',
+                   user_id TEXT,
+                   product_id INTEGER,
+                   amount REAL,
+                   currency TEXT DEFAULT 'SSP',
+                   method TEXT,
+                   status TEXT DEFAULT 'pending',
+                   reference TEXT,
+                   receipt_path TEXT,
+                   created TEXT)""")
     con.execute("""CREATE TABLE IF NOT EXISTS applications
                    (id INTEGER PRIMARY KEY AUTOINCREMENT, job TEXT, name TEXT, email TEXT,
                     phone TEXT, message TEXT, doc TEXT, status TEXT DEFAULT 'new', created TEXT)""")
@@ -412,27 +435,38 @@ def checkout():
     if not items:
         flash("Your cart is empty.", "warning")
         return redirect(url_for("shop"))
+    # user's saved payment methods
+    pms = []
+    u = current_user()
+    if u:
+        users = get_blob("users", [])
+        rec = next((x for x in users if x.get("username") == u.get("username")), None)
+        if rec:
+            pms = rec.get("payment_methods", [])
     if request.method == "POST":
         name = request.form.get("name","").strip()
         email = request.form.get("email","").strip()
         phone = request.form.get("phone","").strip()
         address = request.form.get("address","").strip()
+        # store chosen payment method (may be a saved pm id or a new method name)
+        pay = request.form.get("payment","Cash on Delivery")
+        chosen = request.form.get("chosen_payment", pay).strip()
         city = request.form.get("city","Juba").strip()
         notes = request.form.get("notes","").strip()
-        pay = request.form.get("payment","Cash on Delivery")
         if not name or not phone or not address:
             flash("Name, phone and address are required.", "danger")
-            return render_template("checkout.html", items=items, total=total)
+            return render_template("checkout.html", items=items, total=total, pms=pms)
         if email and not re.match(r"^[^@\s]+@[^@\s]+\.[^@\s]+$", email):
             flash("Invalid email address.", "danger")
-            return render_template("checkout.html", items=items, total=total)
+            return render_template("checkout.html", items=items, total=total, pms=pms)
         con = db()
-        con.execute("""INSERT INTO orders(customer_name,email,phone,address,city,notes,items_json,total,status,created)
-                       VALUES(?,?,?,?,?,?,?,?,?,?)""",
+        con.execute("""INSERT INTO orders(customer_name,email,phone,address,city,notes,items_json,total,status,created,payment_method,payment_status)
+                           VALUES(?,?,?,?,?,?,?,?,?,?,?,?)""",
                     (html.escape(name), html.escape(email), html.escape(phone),
                      html.escape(address), html.escape(city), html.escape(notes),
                      json.dumps(items, default=str), total, f"pending — {pay}",
-                     datetime.utcnow().isoformat()))
+                     datetime.utcnow().isoformat(), chosen,
+                     "pending" if chosen.lower() == "cod" else "pending"))
         # decrement stock
         products = get_blob("products", [])
         cmap = {str(k): v for k, v in get_cart().items()}
@@ -443,13 +477,15 @@ def checkout():
         con.commit(); con.close()
         session.pop("cart", None)
         order_id = db().execute("SELECT MAX(id) FROM orders").fetchone()[0]
+        is_cod = chosen.lower() == "cod"
         site = get_blob("site", {})
         if email:
             send_email_https(email, f"Order received — {site.get('name','Free Online Shopping')}",
                 f"Hi {name},\n\nThanks for your order (#{order_id}). Total: {total:,.0f} {site.get('currency','SSP')}.\nPayment: {pay}\nWe will call you on {phone} for delivery.\n\n— {site.get('name')}")
-        flash(f"Order #{order_id} placed! We will call you soon. 🎉", "success")
-        return redirect(url_for("order_success", oid=order_id))
-    return render_template("checkout.html", items=items, total=total)
+        if is_cod:
+            return redirect(url_for("order_success", oid=order_id))
+        return redirect(url_for("order_pay", oid=order_id))
+    return render_template("checkout.html", items=items, total=total, pms=pms)
 
 @app.route("/order/<int:oid>")
 def order_success(oid):
@@ -458,6 +494,112 @@ def order_success(oid):
     con.close()
     if not o: abort(404)
     return render_template("order_success.html", o=o, items=json.loads(o["items_json"]))
+
+# PAYMENT_ROUTES_MARKER
+PAYMENT_TYPES = [
+    ("visa", "Visa Card"),
+    ("mtn_momo", "MTN Mobile Money"),
+    ("airtel_money", "Airtel Money"),
+    ("bank_transfer", "Bank Transfer"),
+    ("cod", "Pay on Delivery"),
+]
+
+
+def _pm_id():
+    return "pm_" + secrets.token_hex(6)
+
+
+@app.route("/user/payment", methods=["GET", "POST"])
+@login_required
+def user_payment():
+    me = current_user().get("username", "")
+    users = get_blob("users", [])
+    u = next((x for x in users if x.get("username") == me), None)
+    if not u:
+        abort(404)
+    pms = u.get("payment_methods", [])
+    if request.method == "POST":
+        act = request.form.get("action", "add")
+        if act == "add":
+            ptype = request.form.get("ptype", "").strip()
+            label = request.form.get("label", "").strip() or dict(PAYMENT_TYPES).get(ptype, ptype)
+            if ptype not in dict(PAYMENT_TYPES):
+                flash("Invalid payment method.", "danger")
+                return redirect(url_for("user_payment"))
+            pm = {"id": _pm_id(), "type": ptype, "label": label, "is_default": False}
+            if ptype == "visa":
+                pm["card_last4"] = request.form.get("card_last4", "").strip()[-4:]
+                pm["card_name"] = html.escape(request.form.get("card_name", "").strip())
+            elif ptype in ("mtn_momo", "airtel_money"):
+                pm["phone"] = html.escape(request.form.get("phone", "").strip())
+                pm["provider"] = "mtn" if ptype == "mtn_momo" else "airtel"
+            elif ptype == "bank_transfer":
+                pm["bank_name"] = html.escape(request.form.get("bank_name", "").strip())
+                pm["account_name"] = html.escape(request.form.get("account_name", "").strip())
+                pm["account_last4"] = request.form.get("account_last4", "").strip()[-4:]
+            if not any(x.get("is_default") for x in pms):
+                pm["is_default"] = True
+            pms.append(pm)
+            u["payment_methods"] = pms
+            set_blob("users", users)
+            flash("Payment method added.", "success")
+            return redirect(url_for("user_payment"))
+        elif act == "delete":
+            pid = request.form.get("pmid", "").strip()
+            u["payment_methods"] = [x for x in pms if x.get("id") != pid]
+            set_blob("users", users)
+            flash("Payment method removed.", "info")
+            return redirect(url_for("user_payment"))
+        elif act == "default":
+            pid = request.form.get("pmid", "").strip()
+            for x in pms:
+                x["is_default"] = (x.get("id") == pid)
+            u["payment_methods"] = pms
+            set_blob("users", users)
+            flash("Default payment method updated.", "success")
+            return redirect(url_for("user_payment"))
+    return render_template("user_payment.html", pms=pms, types=PAYMENT_TYPES)
+
+
+@app.route("/order/pay/<int:oid>", methods=["GET", "POST"])
+@login_required
+def order_pay(oid):
+    con = db()
+    o = con.execute("SELECT * FROM orders WHERE id=?", (oid,)).fetchone()
+    con.close()
+    if not o:
+        abort(404)
+    items = json.loads(o["items_json"] or "[]")
+    if request.method == "POST":
+        act = request.form.get("action", "pay")
+        if act == "pay":
+            pmethod = request.form.get("payment_method", "").strip()
+            pref = request.form.get("payment_reference", "").strip()
+            receipt = request.files.get("receipt")
+            rpath = None
+            if receipt and receipt.filename:
+                rpath, err = save_upload(receipt)
+                if err:
+                    flash(err, "danger")
+                    return render_template("order_pay.html", o=o, items=items, types=PAYMENT_TYPES)
+            con = db()
+            con.execute(
+                "UPDATE orders SET payment_method=?, payment_reference=?, receipt_path=?, payment_status=? WHERE id=?",
+                (pmethod, pref or None, rpath, "pending", oid),
+            )
+            con.commit()
+            con.close()
+            flash("Payment details submitted. Awaiting admin verification.", "info")
+            return redirect(url_for("account"))
+        elif act == "cancel":
+            con = db()
+            con.execute("UPDATE orders SET payment_status=? WHERE id=?", ("cancelled", oid))
+            con.commit()
+            con.close()
+            flash("Payment cancelled.", "info")
+            return redirect(url_for("account"))
+    return render_template("order_pay.html", o=o, items=items, types=PAYMENT_TYPES)
+
 
 @app.route("/contact", methods=["GET", "POST"])
 def contact():
@@ -477,6 +619,46 @@ def contact():
             flash("Message sent! We will reply soon. ✉️", "success")
             return redirect(url_for("contact"))
     return render_template("contact.html", prefill=request.args.get("subject", "")[:150])
+
+@app.route("/admin/payments", methods=["GET", "POST"])
+@admin_required
+def admin_payments():
+    con = db()
+    if request.method == "POST":
+        pid = request.form.get("pid")
+        action = request.form.get("action")
+        if action in ("verify", "reject") and pid:
+            new_st = "paid" if action == "verify" else "rejected"
+            con.execute("UPDATE admin_payments SET status=? WHERE id=?", (new_st, pid))
+            con.commit()
+            flash("Payment " + action + "d.", "success")
+        elif action == "record":
+            uid = request.form.get("user_id", "").strip()
+            amt = float(request.form.get("amount", 0) or 0)
+            meth = request.form.get("method", "cod")
+            ref = request.form.get("reference", "").strip()
+            receipt = request.files.get("receipt")
+            rpath = None
+            if receipt and receipt.filename:
+                rpath, err = save_upload(receipt)
+                if err:
+                    flash(err, "danger")
+                    con.close()
+                    return redirect(url_for("admin_payments"))
+            con.execute(
+                "INSERT INTO admin_payments(type,user_id,amount,method,status,reference,receipt_path,created) VALUES(?,?,?,?,?,?,?,?)",
+                ("ad_fee", uid, amt, meth, "pending", ref or None, rpath, datetime.utcnow().isoformat()),
+            )
+            con.commit()
+            flash("Ad-fee payment recorded (pending verification).", "info")
+        con.close()
+        return redirect(url_for("admin_payments"))
+    rows = con.execute(
+        "SELECT * FROM admin_payments ORDER BY id DESC"
+    ).fetchall()
+    con.close()
+    users = get_blob("users", [])
+    return render_template("admin_payments.html", rows=rows, users=users)
 
 @app.route("/apply/<int:pid>", methods=["GET", "POST"])
 def apply(pid):
@@ -561,7 +743,8 @@ def logout():
 def account():
     con = db()
     email_like = (current_user() or {}).get("username","")
-    orders = con.execute("SELECT * FROM orders ORDER BY id DESC LIMIT 50").fetchall()
+    me = (current_user() or {}).get("username","")
+    orders = con.execute("SELECT * FROM orders WHERE customer_name=? ORDER BY id DESC LIMIT 50", (me,)).fetchall()
     con.close()
     return render_template("account.html", orders=orders)
 
@@ -898,8 +1081,17 @@ def admin_review(pid):
 def admin_orders():
     con = db()
     if request.method == "POST":
-        con.execute("UPDATE orders SET status=? WHERE id=?", (request.form.get("status","pending")[:100], request.form.get("oid")))
-        con.commit(); flash("Order updated.", "success")
+        oid = request.form.get("oid")
+        if request.form.get("action") == "verify_payment" and oid:
+            con.execute("UPDATE orders SET payment_status='paid' WHERE id=?", (oid,))
+            flash("Order payment marked as paid.", "success")
+        elif request.form.get("action") == "reject_payment" and oid:
+            con.execute("UPDATE orders SET payment_status='rejected' WHERE id=?", (oid,))
+            flash("Order payment rejected.", "info")
+        else:
+            con.execute("UPDATE orders SET status=? WHERE id=?", (request.form.get("status","pending")[:100], oid))
+            flash("Order updated.", "success")
+        con.commit()
         con.close(); return redirect(url_for("admin_orders"))
     orders = con.execute("SELECT * FROM orders ORDER BY id DESC").fetchall()
     con.close()

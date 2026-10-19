@@ -9,6 +9,7 @@
     <a class="{{ 'active' if request.path.startswith('/admin/products') }}" href="/admin/products">📦 Products</a>
     <a class="{{ 'active' if request.path.startswith('/admin/listings') }}" href="/admin/listings">🏪 Marketplace{% if n_pend %} <span class="pill warn">{{ n_pend }}</span>{% endif %}</a>
     <a class="{{ 'active' if request.path.startswith('/admin/orders') }}" href="/admin/orders">🧾 Orders</a>
+    <a class="{{ 'active' if request.path.startswith('/admin/payments') }}" href="/admin/payments">💳 Payments</a>
     <div class="admgroup">People</div>
     <a class="{{ 'active' if request.path.startswith('/admin/applications') }}" href="/admin/applications">📋 Applications{% if n_apps %} <span class="pill warn">{{ n_apps }}</span>{% endif %}</a>
     <a class="{{ 'active' if request.path.startswith('/admin/users') }}" href="/admin/users">👥 Users{% if n_sellreq %} <span class="pill warn">{{ n_sellreq }}</span>{% endif %}</a>
