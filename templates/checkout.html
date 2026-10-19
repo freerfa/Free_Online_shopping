@@ -1,0 +1,8 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Checkout — Total {{ total }}</h1>
+<form method="post"><input type="hidden" name="csrf_token" value="{{ csrf }}">
+<input name="name" placeholder="Full name" required><input name="phone" placeholder="Phone" required><input name="email" placeholder="Email"><input name="address" placeholder="Address" required><input name="city" value="Juba"><textarea name="notes" placeholder="Notes"></textarea>
+<select name="payment"><option>Cash on Delivery</option><option>MTN MoMo</option><option>Bank Transfer</option></select>
+<button class="btn">Place order</button></form>
+{% endblock %}

@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" role="img" aria-label="Connect Airtime L.T.D logo">
+  <defs>
+    <linearGradient id="ca-g" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#0ea5e9"/>
+      <stop offset="1" stop-color="#16a34a"/>
+    </linearGradient>
+  </defs>
+  <rect x="16" y="16" width="480" height="480" rx="104" fill="url(#ca-g)"/>
+  <!-- signal arcs: all networks reaching out -->
+  <path d="M146 236 A110 110 0 0 1 366 236" fill="none" stroke="#ffffff" stroke-width="20" stroke-linecap="round" opacity="0.55"/>
+  <path d="M181 236 A75 75 0 0 1 331 236" fill="none" stroke="#ffffff" stroke-width="20" stroke-linecap="round" opacity="0.8"/>
+  <path d="M216 236 A40 40 0 0 1 296 236" fill="none" stroke="#ffffff" stroke-width="20" stroke-linecap="round"/>
+  <!-- phone: one number for all networks -->
+  <rect x="216" y="252" width="80" height="132" rx="16" fill="#ffffff"/>
+  <rect x="227" y="264" width="58" height="98" rx="8" fill="url(#ca-g)"/>
+  <circle cx="256" cy="373" r="7" fill="url(#ca-g)"/>
+  <!-- four network dots merging into one -->
+  <circle cx="196" cy="410" r="11" fill="#ef4444"/>
+  <circle cx="236" cy="410" r="11" fill="#f59e0b"/>
+  <circle cx="276" cy="410" r="11" fill="#3b82f6"/>
+  <circle cx="316" cy="410" r="11" fill="#e2e8f0"/>
+  <!-- wordmark -->
+  <text x="256" y="455" text-anchor="middle" font-family="system-ui,sans-serif" font-size="44" font-weight="800" fill="#ffffff">CONNECT AIRTIME</text>
+  <text x="256" y="483" text-anchor="middle" font-family="system-ui,sans-serif" font-size="20" font-weight="600" fill="#ffffff" opacity="0.9">L.T.D · All networks on one</text>
+</svg>

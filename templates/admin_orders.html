@@ -1,0 +1,19 @@
+{% extends "admin_base.html" %}
+{% block admin %}
+<h1>Orders ({{ orders|length }})</h1>
+{% for o in orders %}
+<details class="card prodrow">
+  <summary><b>#{{ o["id"] }}</b> {{ o["customer_name"] }} — {{ o["total"] }} {{ site.get('currency','SSP') }} <span class="pill {{ 'warn' if 'pending' in o['status'] else 'ok' }}">{{ o["status"] }}</span></summary>
+  <p class="muted">📞 {{ o["phone"] }} {% if o["email"] %}· ✉️ {{ o["email"] }}{% endif %}<br>📍 {{ o["address"] }}, {{ o["city"] }}<br>🕒 {{ o["created"] }}{% if o["notes"] %}<br>📝 {{ o["notes"] }}{% endif %}</p>
+  <ul>{% for it in json.loads(o["items_json"]) %}<li>{{ it.product.name }} × {{ it.qty }} = {{ it.line }}</li>{% endfor %}</ul>
+  <form method="post" class="inline">
+    <input type="hidden" name="csrf_token" value="{{ csrf }}">
+    <input type="hidden" name="oid" value="{{ o["id"] }}">
+    <select name="status">
+      {% for s in ['pending','confirmed','packed','shipped','delivered','cancelled'] %}<option {{ 'selected' if s == o['status'].split(' — ')[0] else '' }}>{{ s }}</option>{% endfor %}
+    </select>
+    <button class="btn small">Update</button>
+  </form>
+</details>
+{% else %}<p class="muted">No orders yet.</p>{% endfor %}
+{% endblock %}

@@ -1,0 +1,1 @@
+{% extends "base.html" %}{% block content %}<h1>My account — {{ user.username }}</h1><h2>Recent orders</h2>{% for o in orders %}<div class="card">#{{ o["id"] }} — {{ o["total"] }} — {{ o["status"] }} — {{ o["created"] }}</div>{% else %}<p>No orders yet.</p>{% endfor %}{% endblock %}

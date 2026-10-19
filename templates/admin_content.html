@@ -1,0 +1,38 @@
+{% extends "admin_base.html" %}
+{% block admin %}
+<h1>Site content</h1>
+<p class="muted">Everything here appears on the public site instantly after saving.</p>
+<form method="post">
+  <input type="hidden" name="csrf_token" value="{{ csrf }}">
+  <div class="card"><h3>🏷️ Store identity</h3>
+    <div class="frow">
+      <label>Store name<input name="name" value="{{ site.get('name','') }}"></label>
+      <label>Tagline<input name="tagline" value="{{ site.get('tagline','') }}"></label>
+      <label>Currency<input name="currency" value="{{ site.get('currency','SSP') }}"></label>
+      <label>Announcement bar<input name="announcement" value="{{ site.get('announcement','') }}"></label>
+    </div>
+  </div>
+  <div class="card"><h3>🖼️ Homepage hero</h3>
+    <div class="frow">
+      <label>Hero title<input name="hero_title" value="{{ site.get('hero_title','') }}"></label>
+      <label>Button text<input name="hero_cta" value="{{ site.get('hero_cta','') }}"></label>
+    </div>
+    <label>Hero subtitle<textarea name="hero_subtitle" rows="2">{{ site.get('hero_subtitle','') }}</textarea></label>
+  </div>
+  <div class="card"><h3>📖 About & mission</h3>
+    <label>About us<textarea name="about" rows="3">{{ site.get('about','') }}</textarea></label>
+    <label>Mission<textarea name="mission" rows="2">{{ site.get('mission','') }}</textarea></label>
+  </div>
+  <div class="card"><h3>📞 Contact details</h3>
+    <div class="frow">
+      <label>Email<input name="contact_email" value="{{ site.get('contact_email','') }}"></label>
+      <label>Phone<input name="contact_phone" value="{{ site.get('contact_phone','') }}"></label>
+      <label>Address<input name="address" value="{{ site.get('address','') }}"></label>
+    </div>
+  </div>
+  <div class="card"><h3>🦶 Footer</h3>
+    <label>Footer text<input name="footer_text" value="{{ site.get('footer_text','') }}"></label>
+  </div>
+  <button class="btn">Save all changes</button>
+</form>
+{% endblock %}

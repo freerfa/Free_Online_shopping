@@ -1,0 +1,86 @@
+{% extends "admin_base.html" %}
+{% block admin %}
+<h1>Marketplace listings ({{ listings|length }})</h1>
+<p class="muted">Products posted by shoppers. Review each post, collect the advertisement fee (mobile money / cash), then approve to publish it in the shop.</p>
+{% set reqs = users|selectattr('sell_request', 'equalto', 'pending')|rejectattr('can_sell', 'defined')|list %}
+{% if reqs %}
+<details class="card addbox" open>
+  <summary><b>✋ Seller access requests ({{ reqs|length }})</b></summary>
+  {% for u in reqs %}
+  <div class="btnrow">
+    <b>{{ u.username }}</b> <span class="muted">{{ u.email or '' }}</span>
+    <form method="post" action="/admin/users">
+      <input type="hidden" name="csrf_token" value="{{ csrf }}">
+      <input type="hidden" name="action" value="grant">
+      <input type="hidden" name="username" value="{{ u.username }}">
+      <button class="btn small">✔ Grant seller access</button>
+    </form>
+  </div>
+  {% endfor %}
+</details>
+{% endif %}
+<details class="card addbox">
+  <summary><b>⚙️ Advertisement fee settings</b></summary>
+  <form method="post" class="inline">
+    <input type="hidden" name="csrf_token" value="{{ csrf }}">
+    <input type="hidden" name="action" value="fee_set">
+    <label>Fee per post ({{ site.get('currency','SSP') }})<input name="fee" type="number" min="0" value="{{ fee }}"></label>
+    <button class="btn small">Save fee</button>
+  </form>
+</details>
+{% for p in listings %}
+<details class="card prodrow">
+  <summary>
+    {% if p.image %}<img class="thumb" src="{{ p.image }}" alt="">{% else %}<span class="thumb placeholder">📦</span>{% endif %}
+    <b>{{ p.name }}</b> <span class="muted">by {{ p.seller }} · {{ (p.created or '')[:10] }}</span>
+    <span class="price">{{ site.get('currency','SSP') }} {{ p.price }}</span>
+    <span class="pill {{ 'ok' if p.status == 'approved' else ('bad' if p.status == 'rejected' else 'warn') }}">{{ p.status }}</span>
+    <span class="pill {{ 'ok' if p.fee_status == 'paid' else 'bad' }}">fee {{ p.get('fee_amount', 0) }} {{ p.fee_status }}</span>
+  </summary>
+  <p>{{ p.desc }}</p>
+  {% set imgs = p.get('images') or ([p.image] if p.image else []) %}
+  {% if imgs|length > 1 %}<div class="imgrow">{% for im in imgs %}<div class="imgthumb"><img src="{{ im }}" alt=""></div>{% endfor %}</div>{% endif %}
+  <div class="btnrow">
+    <a class="btn small ghost" href="/admin/listings/review/{{ p.id }}">🔍 Review</a>
+    {% if p.status != 'approved' %}
+    <form method="post">
+      <input type="hidden" name="csrf_token" value="{{ csrf }}">
+      <input type="hidden" name="action" value="approve">
+      <input type="hidden" name="pid" value="{{ p.id }}">
+      <button class="btn small">✔ Approve & publish</button>
+    </form>
+    {% else %}
+    <form method="post">
+      <input type="hidden" name="csrf_token" value="{{ csrf }}">
+      <input type="hidden" name="action" value="reject">
+      <input type="hidden" name="pid" value="{{ p.id }}">
+      <button class="btn small danger">⏸ Unpublish</button>
+    </form>
+    {% endif %}
+    {% if p.fee_status == 'paid' %}
+    <form method="post">
+      <input type="hidden" name="csrf_token" value="{{ csrf }}">
+      <input type="hidden" name="action" value="fee_unpaid">
+      <input type="hidden" name="pid" value="{{ p.id }}">
+      <button class="btn small ghost">Mark fee unpaid</button>
+    </form>
+    {% else %}
+    <form method="post">
+      <input type="hidden" name="csrf_token" value="{{ csrf }}">
+      <input type="hidden" name="action" value="fee_paid">
+      <input type="hidden" name="pid" value="{{ p.id }}">
+      <button class="btn small">💰 Mark fee paid</button>
+    </form>
+    {% endif %}
+    <form method="post" onsubmit="return confirm('Delete this post and its photos?')">
+      <input type="hidden" name="csrf_token" value="{{ csrf }}">
+      <input type="hidden" name="action" value="delete">
+      <input type="hidden" name="pid" value="{{ p.id }}">
+      <button class="btn small danger">Delete</button>
+    </form>
+  </div>
+</details>
+{% else %}
+<p class="muted">No user posts yet. They appear here when a shopper submits a product for review.</p>
+{% endfor %}
+{% endblock %}

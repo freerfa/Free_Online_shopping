@@ -1,0 +1,6 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Shop</h1>
+<form method="get" class="filters"><input name="q" value="{{ q }}" placeholder="Search..."><button>Go</button></form>
+<div class="grid">{% for p in products %}{% include "card.html" %}{% else %}<p>No products found.</p>{% endfor %}</div>
+{% endblock %}

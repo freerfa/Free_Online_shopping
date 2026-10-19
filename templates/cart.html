@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Your Cart</h1>
+{% if items %}
+<form method="post" action="/cart/update"><input type="hidden" name="csrf_token" value="{{ csrf }}">
+{% for it in items %}<div class="card"><h3>{{ it.product.name }} x <input name="qty_{{ it.product.id }}" value="{{ it.qty }}" size="3"> = {{ it.line }}</h3><button name="remove" value="{{ it.product.id }}">Remove</button></div>{% endfor %}
+<p><b>Total: {{ total }}</b></p><button class="btn">Update</button></form>
+<a class="btn" href="/checkout">Checkout</a>
+{% else %}<p>Cart empty. <a href="/shop">Shop now</a></p>{% endif %}
+{% endblock %}

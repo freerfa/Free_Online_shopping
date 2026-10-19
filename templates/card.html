@@ -1,0 +1,16 @@
+<div class="card prod">
+{% if p.image %}<a href="/product/{{ p.id }}"><img class="pimg" src="{{ p.image }}" alt="{{ p.name }}" loading="lazy"></a>{% endif %}
+<a href="/product/{{ p.id }}"><h3>{{ p.name }}</h3></a>
+{% if p.get('seller') %}<span class="pill warn">🏪 {{ p.seller }}</span>{% endif %}
+{% if p.price %}
+<p class="price">{{ site.get('currency','SSP') }} {{ "{:,.0f}".format(p.price) }}</p>
+{% endif %}
+<p>{{ p.desc }}</p>
+{% if p.category == 'service' %}
+<a class="btn small" href="/contact?subject={{ p.name|urlencode }}">Contact us</a>
+{% elif p.category == 'jobs' %}
+<a class="btn small" href="/apply/{{ p.id }}">Apply now</a>
+{% else %}
+<form method="post" action="/cart/add/{{ p.id }}"><input type="hidden" name="csrf_token" value="{{ csrf }}"><button class="btn small">Add to cart</button></form>
+{% endif %}
+</div>

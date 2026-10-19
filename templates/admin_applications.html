@@ -1,0 +1,41 @@
+{% extends "admin_base.html" %}
+{% block admin %}
+<h1>Applications ({{ apps|length }})</h1>
+<p class="muted">Job applications submitted from the Jobs pages. Open a card to read the message, view the uploaded document, change status or delete.</p>
+{% set statcls = {'new':'', 'reviewing':'warn', 'shortlisted':'ok', 'hired':'ok', 'rejected':'bad'} %}
+{% for a in apps %}
+<details class="card prodrow">
+  <summary>
+    <span class="pill {{ statcls.get(a.status, '') }}">{{ a.status }}</span>
+    <b>{{ a.name }}</b> — {{ a.job }}
+    <span class="muted">{{ (a.created or '')[:16] }}</span>
+  </summary>
+  <div class="appbody">
+    <p><b>Email:</b> <a href="mailto:{{ a.email }}">{{ a.email }}</a> · <b>Phone:</b> {{ a.phone or '—' }}</p>
+    <p>{{ a.message }}</p>
+    {% if a.doc %}
+    <p><a class="btn small" href="/admin/applications/{{ a.id }}/doc">📄 View / download document</a></p>
+    {% else %}<p class="muted">No document uploaded.</p>{% endif %}
+    <div class="btnrow">
+      <form method="post" class="inline">
+        <input type="hidden" name="csrf_token" value="{{ csrf }}">
+        <input type="hidden" name="aid" value="{{ a.id }}">
+        <select name="status">
+          {% for s in ['new','reviewing','shortlisted','hired','rejected'] %}
+          <option value="{{ s }}" {{ 'selected' if a.status == s }}>{{ s }}</option>
+          {% endfor %}
+        </select>
+        <button class="btn small">Update status</button>
+      </form>
+      <form method="post" onsubmit="return confirm('Delete this application and its document?')">
+        <input type="hidden" name="csrf_token" value="{{ csrf }}">
+        <input type="hidden" name="did" value="{{ a.id }}">
+        <button class="btn small danger">Delete</button>
+      </form>
+    </div>
+  </div>
+</details>
+{% else %}
+<p class="muted">No applications yet. They will appear here when someone taps <b>Apply now</b> on a job.</p>
+{% endfor %}
+{% endblock %}

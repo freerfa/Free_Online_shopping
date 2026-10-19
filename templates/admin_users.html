@@ -1,0 +1,24 @@
+{% extends "admin_base.html" %}
+{% block admin %}
+<h1>Users ({{ users|length }})</h1>
+<p class="muted">Customer accounts registered on the store. Grant the <b>seller right</b> to let an account post products in the marketplace. Removing a user here does not delete their orders.</p>
+<table class="tbl"><tr><th>Username</th><th>Email</th><th>Joined</th><th>Seller access</th><th></th></tr>
+{% for u in users %}
+<tr><td><b>{{ u.username }}</b></td><td>{{ u.email or '—' }}</td><td class="muted">{{ (u.created or '')[:16] }}</td>
+<td>
+  {% if u.can_sell %}<span class="pill ok">granted</span>
+  {% elif u.sell_request == 'pending' %}<span class="pill warn">requested</span>
+  {% else %}<span class="muted">—</span>{% endif %}
+  <form method="post" class="inline">
+    <input type="hidden" name="csrf_token" value="{{ csrf }}">
+    <input type="hidden" name="username" value="{{ u.username }}">
+    {% if u.can_sell %}
+    <input type="hidden" name="action" value="revoke"><button class="btn small ghost">Revoke</button>
+    {% else %}
+    <input type="hidden" name="action" value="grant"><button class="btn small">{{ 'Approve' if u.sell_request == 'pending' else 'Grant' }}</button>
+    {% endif %}
+  </form>
+</td>
+<td><form method="post" onsubmit="return confirm('Remove {{ u.username }}?')"><input type="hidden" name="csrf_token" value="{{ csrf }}"><input type="hidden" name="action" value="delete"><input type="hidden" name="username" value="{{ u.username }}"><button class="btn small danger">Remove</button></form></td></tr>
+{% else %}<tr><td colspan="5" class="muted">No users yet.</td></tr>{% endfor %}</table>
+{% endblock %}

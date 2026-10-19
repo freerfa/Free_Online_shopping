@@ -1,0 +1,271 @@
+{
+  "site": {
+    "name": "Free Online Shopping",
+    "tagline": "Quality products, free to browse — pay only for what you love.",
+    "hero_title": "Welcome to Free Online Shopping",
+    "hero_subtitle": "Discover phones, fashion, groceries & more at unbeatable prices. Free browsing, fast checkout, doorstep delivery.",
+    "hero_cta": "Shop Now",
+    "currency": "SSP",
+    "announcement": "🎉 Grand Opening: Free delivery on orders over 5,000 SSP in Juba!",
+    "about": "Free Online Shopping is your one-stop online store for everyday needs — electronics, fashion, home goods and groceries. Browse free, order in seconds, pay on delivery or mobile money.",
+    "mission": "To make online shopping simple, affordable and accessible to everyone.",
+    "contact_email": "support@freeonlineshopping.com",
+    "contact_phone": "+211 920 000 000",
+    "address": "Juba, South Sudan",
+    "footer_text": "© 2026 Free Online Shopping. All rights reserved."
+  },
+  "categories": [
+    {
+      "id": "phones",
+      "name": "Phones & Electronics",
+      "icon": "📱"
+    },
+    {
+      "id": "fashion",
+      "name": "Fashion",
+      "icon": "👗"
+    },
+    {
+      "id": "home",
+      "name": "Home & Kitchen",
+      "icon": "🏠"
+    },
+    {
+      "id": "groceries",
+      "name": "Groceries",
+      "icon": "🛒"
+    },
+    {
+      "id": "beauty",
+      "name": "Beauty & Health",
+      "icon": "💅"
+    },
+    {
+      "id": "service",
+      "name": "Service",
+      "icon": "📡"
+    },
+    {
+      "id": "jobs",
+      "name": "Jobs",
+      "icon": "💼"
+    }
+  ],
+  "products": [
+    {
+      "id": 11,
+      "name": "Connect Airtime L.T.D",
+      "category": "service",
+      "price": 1000,
+      "old_price": 0,
+      "stock": 999,
+      "badge": "New",
+      "image": "/static/img/products/product_11.svg",
+      "desc": "Connect Airtime L.T.D — building trust for all South Sudanese. Fast, simple and reliable airtime top-up for ALL networks on one number. Managing Director (MD): MUSEVENI SYLVESTER Sallah. Call/WhatsApp: +211 924 689 271 or +211 929 122 339."
+    },
+    {
+      "id": 1,
+      "name": "Samsung Galaxy A14",
+      "category": "phones",
+      "price": 32500,
+      "old_price": 38000,
+      "stock": 20,
+      "badge": "Hot",
+      "image": "/static/img/products/product_1.svg",
+      "desc": "6.6-inch display, 50MP camera, 5000mAh battery, 4GB/128GB."
+    },
+    {
+      "id": 2,
+      "name": "Oraimo FreePods 3",
+      "category": "phones",
+      "price": 5500,
+      "old_price": 7000,
+      "stock": 50,
+      "badge": "Sale",
+      "image": "/static/img/products/product_2.svg",
+      "desc": "True wireless earbuds with clear bass and long battery life."
+    },
+    {
+      "id": 3,
+      "name": "Men's Classic T-Shirt",
+      "category": "fashion",
+      "price": 2500,
+      "old_price": 3500,
+      "stock": 100,
+      "badge": "",
+      "image": "/static/img/products/product_3.svg",
+      "desc": "100% cotton, comfortable fit. Sizes M–XXL."
+    },
+    {
+      "id": 4,
+      "name": "Women's Ankara Dress",
+      "category": "fashion",
+      "price": 8500,
+      "old_price": 12000,
+      "stock": 30,
+      "badge": "New",
+      "image": "/static/img/products/product_4.svg",
+      "desc": "Beautiful Ankara print dress, tailored fit."
+    },
+    {
+      "id": 5,
+      "name": "Non-stick Cooking Pot Set",
+      "category": "home",
+      "price": 15000,
+      "old_price": 18000,
+      "stock": 25,
+      "badge": "",
+      "image": "/static/img/products/product_5.svg",
+      "desc": "5-piece non-stick pot set for everyday cooking."
+    },
+    {
+      "id": 6,
+      "name": "Solar LED Bulb Pack (4pcs)",
+      "category": "home",
+      "price": 4000,
+      "old_price": 5000,
+      "stock": 60,
+      "badge": "",
+      "image": "/static/img/products/product_6.svg",
+      "desc": "Energy-saving solar rechargeable LED bulbs."
+    },
+    {
+      "id": 7,
+      "name": "Rice 25kg Bag",
+      "category": "groceries",
+      "price": 18000,
+      "old_price": 20000,
+      "stock": 40,
+      "badge": "",
+      "image": "/static/img/products/product_7.svg",
+      "desc": "Premium long-grain rice, 25kg bag."
+    },
+    {
+      "id": 8,
+      "name": "Cooking Oil 5L",
+      "category": "groceries",
+      "price": 9500,
+      "old_price": 11000,
+      "stock": 45,
+      "badge": "",
+      "image": "/static/img/products/product_8.svg",
+      "desc": "Pure vegetable cooking oil, 5 litres."
+    },
+    {
+      "id": 9,
+      "name": "Shea Butter Cream",
+      "category": "beauty",
+      "price": 3000,
+      "old_price": 4000,
+      "stock": 70,
+      "badge": "Natural",
+      "image": "/static/img/products/product_9.svg",
+      "desc": "Natural shea butter body cream for soft skin."
+    },
+    {
+      "id": 10,
+      "name": "Perfume — Oud Classic",
+      "category": "beauty",
+      "price": 6500,
+      "old_price": 8000,
+      "stock": 35,
+      "badge": "",
+      "image": "/static/img/products/product_10.svg",
+      "desc": "Long-lasting oud fragrance, 100ml."
+    },
+    {
+      "id": 12,
+      "name": "Sales Agent — Juba",
+      "category": "jobs",
+      "price": 0,
+      "old_price": 0,
+      "stock": 3,
+      "badge": "Hiring",
+      "image": "/static/img/products/product_12.svg",
+      "desc": "Job opening: Sales Agent (Juba) — friendly team, training provided, commission on target. Tap Apply now and send your CV through the Contact page; we will get back to you. MD: MUSEVENI SYLVESTER Sallah · +211 924 689 271 / +211 929 122 339."
+    },
+    {
+      "id": 13,
+      "name": "Delivery Rider (Juba)",
+      "category": "jobs",
+      "price": 0,
+      "old_price": 0,
+      "stock": 4,
+      "badge": "Hiring",
+      "image": "/static/img/products/product_13.svg",
+      "desc": "Delivery Rider — Juba. Own motorcycle, valid licence and good knowledge of Juba routes required. Daily pay + fuel allowance. Tap Apply now and send your CV through the Contact page."
+    },
+    {
+      "id": 14,
+      "name": "Warehouse Assistant",
+      "category": "jobs",
+      "price": 0,
+      "old_price": 0,
+      "stock": 2,
+      "badge": "Hiring",
+      "image": "/static/img/products/product_14.svg",
+      "desc": "Warehouse Assistant — receiving, packing and loading orders. S4 level minimum, able to lift heavy items, team player. Tap Apply now and send your CV through the Contact page."
+    },
+    {
+      "id": 15,
+      "name": "Customer Support Agent",
+      "category": "jobs",
+      "price": 0,
+      "old_price": 0,
+      "stock": 3,
+      "badge": "Hiring",
+      "image": "/static/img/products/product_15.svg",
+      "desc": "Customer Support Agent — phone, WhatsApp and walk-in customers. Excellent communication in English and Juba Arabic, patient and friendly. Training provided. Tap Apply now to send your CV."
+    },
+    {
+      "id": 16,
+      "name": "Graphic Designer (Part-time)",
+      "category": "jobs",
+      "price": 0,
+      "old_price": 0,
+      "stock": 1,
+      "badge": "Hiring",
+      "image": "/static/img/products/product_16.svg",
+      "desc": "Graphic Designer (Part-time) — social media posts, flyers and product photos. Send a portfolio with your CV. Remote-friendly with weekly check-ins in Juba. Tap Apply now to get started."
+    },
+    {
+      "id": 17,
+      "name": "Marketing Officer",
+      "category": "jobs",
+      "price": 0,
+      "old_price": 0,
+      "stock": 2,
+      "badge": "Hiring",
+      "image": "/static/img/products/product_17.svg",
+      "desc": "Marketing Officer — grow Connect Airtime across South Sudan: campaigns, campus and market outreach, social media. Diploma in marketing or related field. Tap Apply now and send your CV."
+    }
+  ],
+  "testimonials": [
+    {
+      "name": "Mary A.",
+      "text": "Fast delivery in Juba and great prices. My favourite online shop!",
+      "stars": 5
+    },
+    {
+      "name": "John K.",
+      "text": "Ordered a phone and it arrived in 2 days. Very trusted.",
+      "stars": 5
+    },
+    {
+      "name": "Achol D.",
+      "text": "Good customer service on WhatsApp. I recommend Free Online Shopping.",
+      "stars": 4
+    }
+  ],
+  "partners": [
+    "MTN MoMo",
+    "Zain",
+    "DHL Juba",
+    "City Express"
+  ],
+  "users": [],
+  "admin_users": [],
+  "admin_account": {
+    "note": "managed from Admin > Account section only"
+  }
+}

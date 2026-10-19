@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>🏪 My product posts</h1>
+<p class="muted">Advertisement fee: <b>{{ site.get('currency','SSP') }} {{ fee }}</b> per post — payable via mobile money or cash at our office after review. Your post goes live in the shop once it is approved and the fee is settled.</p>
+<datalist id="catlist">{% for c in categories %}<option value="{{ c.id }}">{{ c.name }}</option>{% endfor %}</datalist>
+<div class="authgrid">
+  <div class="card">
+  {% if not seller %}
+    <h3>🔒 Seller access required</h3>
+    <p>Only accounts with an admin-granted <b>seller right</b> can post products on this marketplace.</p>
+    {% if request_status == 'pending' %}
+    <p class="muted">⏳ Your request is pending admin review. You will be able to post as soon as it is granted.</p>
+    {% else %}
+    <form method="post">
+      <input type="hidden" name="csrf_token" value="{{ csrf }}">
+      <input type="hidden" name="action" value="request_access">
+      <button class="btn">✋ Request seller access</button>
+    </form>
+    {% endif %}
+  {% else %}
+    <h3>Post a new product</h3>
+    <form method="post" enctype="multipart/form-data">
+      <input type="hidden" name="csrf_token" value="{{ csrf }}">
+      <input type="hidden" name="action" value="add">
+      <label>Product name *<input name="name" required maxlength="120" placeholder="e.g. HP EliteBook 840"></label>
+      <label>Category *<input name="category" list="catlist" required placeholder="e.g. phones"></label>
+      <label>Price ({{ site.get('currency','SSP') }}) *<input name="price" type="number" step="0.01" min="0" required></label>
+      <label>Quantity available<input name="stock" type="number" min="0" value="1"></label>
+      <label>Description *<textarea name="desc" rows="4" required placeholder="Condition, features, why buyers should choose it..."></textarea></label>
+      <label>Photos — first one becomes the main photo<input type="file" name="images" accept="image/png,image/jpeg,image/webp,image/gif" multiple></label>
+      <button class="btn">Submit for review</button>
+    </form>
+  {% endif %}
+  </div>
+  <div>
+    <h3>My posts ({{ mine|length }})</h3>
+    {% if not seller and not mine %}
+    <p class="muted">Once your seller access is granted, your posts will appear here.</p>
+    {% endif %}
+    {% for p in mine %}
+    <details class="card prodrow">
+      <summary>
+        {% if p.image %}<img class="thumb" src="{{ p.image }}" alt="">{% else %}<span class="thumb placeholder">📦</span>{% endif %}
+        <b>{{ p.name }}</b>
+        <span class="pill {{ 'ok' if p.status == 'approved' else ('bad' if p.status == 'rejected' else 'warn') }}">{{ p.status }}</span>
+        <span class="pill {{ 'ok' if p.fee_status == 'paid' else 'bad' }}">fee {{ p.fee_status }}</span>
+        <span class="price">{{ site.get('currency','SSP') }} {{ p.price }}</span>
+      </summary>
+      {% if p.get('review_notes') %}
+      <div class="reviewnote">📝 <b>Admin review notes:</b> {{ p.review_notes }}</div>
+      {% endif %}
+      {% if p.status != 'approved' %}
+      <form method="post" enctype="multipart/form-data">
+        <input type="hidden" name="csrf_token" value="{{ csrf }}">
+        <input type="hidden" name="action" value="edit">
+        <input type="hidden" name="pid" value="{{ p.id }}">
+        {% set imgs = p.get('images') or ([p.image] if p.image else []) %}
+        <input type="hidden" name="existing_images" value="{{ imgs|tojson }}">
+        <input name="name" value="{{ p.name }}" required maxlength="120">
+        <input name="category" value="{{ p.category }}" list="catlist">
+        <input name="price" value="{{ p.price }}" type="number" step="0.01" min="0">
+        <input name="stock" value="{{ p.stock }}" type="number" min="0">
+        <textarea name="desc" rows="3">{{ p.desc }}</textarea>
+        <input type="file" name="images" accept="image/png,image/jpeg,image/webp,image/gif" multiple>
+        <div class="btnrow"><button class="btn small">Save & resubmit</button></div>
+      </form>
+      {% else %}<p class="muted">Live in the shop 🎉</p>{% endif %}
+      <form method="post" onsubmit="return confirm('Delete this post?')">
+        <input type="hidden" name="csrf_token" value="{{ csrf }}">
+        <input type="hidden" name="action" value="delete">
+        <input type="hidden" name="pid" value="{{ p.id }}">
+        <button class="btn small danger">Delete post</button>
+      </form>
+    </details>
+    {% else %}
+    <p class="muted">You haven't posted anything yet. Use the form to advertise your first product! 🚀</p>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

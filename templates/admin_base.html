@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="adm">
+  <aside class="admnav card">
+    <h3>Admin panel</h3>
+    <p class="muted">{{ user.username }}</p>
+    <a class="{{ 'active' if request.path == '/admin' }}" href="/admin">📊 Dashboard</a>
+    <div class="admgroup">Store</div>
+    <a class="{{ 'active' if request.path.startswith('/admin/products') }}" href="/admin/products">📦 Products</a>
+    <a class="{{ 'active' if request.path.startswith('/admin/listings') }}" href="/admin/listings">🏪 Marketplace{% if n_pend %} <span class="pill warn">{{ n_pend }}</span>{% endif %}</a>
+    <a class="{{ 'active' if request.path.startswith('/admin/orders') }}" href="/admin/orders">🧾 Orders</a>
+    <div class="admgroup">People</div>
+    <a class="{{ 'active' if request.path.startswith('/admin/applications') }}" href="/admin/applications">📋 Applications{% if n_apps %} <span class="pill warn">{{ n_apps }}</span>{% endif %}</a>
+    <a class="{{ 'active' if request.path.startswith('/admin/users') }}" href="/admin/users">👥 Users{% if n_sellreq %} <span class="pill warn">{{ n_sellreq }}</span>{% endif %}</a>
+    <a class="{{ 'active' if request.path.startswith('/admin/account') }}" href="/admin/account">🔑 Admin accounts</a>
+    <div class="admgroup">Site</div>
+    <a class="{{ 'active' if request.path.startswith('/admin/content') }}" href="/admin/content">📝 Site content</a>
+    <a class="{{ 'active' if request.path.startswith('/admin/messages') }}" href="/admin/messages">✉️ Messages</a>
+    <a class="{{ 'active' if request.path.startswith('/admin/import') }}" href="/admin/import">💾 Import / Export</a>
+    <div class="admgroup"></div>
+    <a href="/">← Back to store</a>
+  </aside>
+  <section class="admmain">{% block admin %}{% endblock %}</section>
+</div>
+{% endblock %}

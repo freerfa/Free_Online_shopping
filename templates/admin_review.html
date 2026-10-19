@@ -1,0 +1,69 @@
+{% extends "admin_base.html" %}
+{% block admin %}
+<p><a href="/admin/listings">← Back to marketplace listings</a></p>
+<h1>🔍 Review: {{ p.name }}</h1>
+<p>
+  <span class="pill {{ 'ok' if p.status == 'approved' else ('bad' if p.status == 'rejected' else 'warn') }}">{{ p.status }}</span>
+  <span class="pill {{ 'ok' if p.fee_status == 'paid' else 'bad' }}">fee {{ p.get('fee_amount', 0) }} {{ p.fee_status }}</span>
+  <span class="pill">{{ (p.created or '')[:16] }}</span>
+</p>
+<div class="pdp">
+  <div>
+    {% set imgs = p.get('images') or ([p.image] if p.image else []) %}
+    <h3>Photos ({{ imgs|length }})</h3>
+    {% if imgs %}
+    <div class="imgrow">
+      {% for im in imgs %}<div class="imgthumb"><img src="{{ im }}" alt=""></div>{% endfor %}
+    </div>
+    {% else %}<p class="muted">No photos.</p>{% endif %}
+    <h3>Description</h3>
+    <p>{{ p.desc }}</p>
+    <h3>📝 Review notes for the seller</h3>
+    <form method="post">
+      <input type="hidden" name="csrf_token" value="{{ csrf }}">
+      <textarea name="notes" rows="4" placeholder="e.g. Please add clearer photos, or the price is too high for this condition...">{{ p.get('review_notes', '') }}</textarea>
+      <div class="btnrow">
+        <button class="btn small ghost" name="action" value="notes">💾 Save notes & mark reviewing</button>
+        <button class="btn small" name="action" value="approve">✔ Approve & publish</button>
+        <button class="btn small danger" name="action" value="reject">✖ Reject with feedback</button>
+      </div>
+    </form>
+  </div>
+  <div>
+    <div class="card">
+      <h3>Product</h3>
+      <p><b>{{ p.name }}</b><br>
+        {{ site.get('currency','SSP') }} {{ p.price }} · stock {{ p.stock }}<br>
+        category: {{ p.category }} · type: {{ p.post_type }}<br>
+        seller: <b>{{ p.seller }}</b></p>
+    </div>
+    <div class="card">
+      <h3>🏪 Seller</h3>
+      {% if seller %}
+      <p><b>{{ seller.username }}</b><br>
+        {{ seller.email or 'no email' }}<br>
+        joined {{ (seller.created or '')[:16] }}<br>
+        seller access: <span class="pill {{ 'ok' if seller.can_sell else 'bad' }}">{{ 'granted' if seller.can_sell else 'not granted' }}</span></p>
+      {% else %}
+      <p class="muted">Seller account not found (deleted).</p>
+      {% endif %}
+    </div>
+    <div class="card">
+      <h3>💰 Advertisement fee ({{ site.get('currency','SSP') }} {{ fee }} per post)</h3>
+      <div class="btnrow">
+        {% if p.fee_status == 'paid' %}
+        <form method="post">
+          <input type="hidden" name="csrf_token" value="{{ csrf }}">
+          <button class="btn small ghost" name="action" value="fee_unpaid">Mark fee unpaid</button>
+        </form>
+        {% else %}
+        <form method="post">
+          <input type="hidden" name="csrf_token" value="{{ csrf }}">
+          <button class="btn small" name="action" value="fee_paid">💰 Mark fee paid</button>
+        </form>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

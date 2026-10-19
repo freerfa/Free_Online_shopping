@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}Login or Sign up — {{ site.get('name','Free Online Shopping') }}{% endblock %}
+{% block content %}
+<h1>Login or Sign up</h1>
+<p class="muted">One page for both — sign in if you have an account, or create one in seconds.</p>
+<div class="authgrid">
+  <div class="card auth {% if tab != 'signup' %}active{% endif %}" id="signin">
+    <h2>Sign in</h2>
+    <form method="post" action="/login">
+      <input type="hidden" name="csrf_token" value="{{ csrf }}">
+      <input name="username" placeholder="Username or email" required autofocus>
+      <input type="password" name="password" placeholder="Password" required>
+      <input type="hidden" name="next" value="{{ next }}">
+      <button class="btn">Sign in</button>
+    </form>
+  </div>
+  <div class="card auth {% if tab == 'signup' %}active{% endif %}" id="signup">
+    <h2>Create account</h2>
+    <form method="post" action="/register">
+      <input type="hidden" name="csrf_token" value="{{ csrf }}">
+      <input name="username" placeholder="Choose a username" required {% if tab == 'signup' %}autofocus{% endif %}>
+      <input type="email" name="email" placeholder="Email (optional)">
+      <input type="password" name="password" placeholder="Password (4+ characters)" required>
+      <button class="btn">Sign up</button>
+    </form>
+  </div>
+</div>
+{% endblock %}
