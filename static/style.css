@@ -177,3 +177,10 @@ h2{font-size:clamp(1.2rem,3vw,2rem);line-height:1.2}
 .cat:hover{border-color:var(--brand);color:var(--brand);transform:translateY(-1px)}
 .cat.active{background:var(--brand);border-color:var(--brand);color:#fff;font-weight:800;box-shadow:0 4px 14px rgba(79,70,229,.28)}
 .cat.active .icon{color:#fff}
+.pricebar{display:flex;gap:.6rem;flex-wrap:wrap;align-items:center}
+.pricefield{display:flex;align-items:center;gap:.35rem;flex:1 1 110px}
+.pricefield input{flex:1 1 auto;padding:.5rem 1rem .5rem 2.6rem;border:1px solid var(--border);border-radius:8px;background:var(--card);color:var(--text);font:inherit}
+.pricefield .pill{flex:0 0 auto;padding:.1rem .5rem}
+@media (max-width: 640px){
+  .pricefield{flex:1 1 100%}
+}

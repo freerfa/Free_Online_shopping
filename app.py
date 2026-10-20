@@ -377,14 +377,28 @@ def shop():
     q = request.args.get("q", "").strip().lower()
     cat = request.args.get("cat", "").strip()
     sort = request.args.get("sort", "")
+    min_price = request.args.get("min_price", "").strip()
+    max_price = request.args.get("max_price", "").strip()
     if q:
         products = [p for p in products if q in p.get("name","").lower() or q in p.get("desc","").lower()]
     if cat:
         products = [p for p in products if p.get("category") == cat]
+    if min_price:
+        try:
+            m = float(min_price)
+            products = [p for p in products if p.get("price", 0) >= m]
+        except ValueError:
+            pass
+    if max_price:
+        try:
+            m = float(max_price)
+            products = [p for p in products if p.get("price", 0) <= m]
+        except ValueError:
+            pass
     if sort == "low": products = sorted(products, key=lambda p: p.get("price",0))
     elif sort == "high": products = sorted(products, key=lambda p: p.get("price",0), reverse=True)
     elif sort == "name": products = sorted(products, key=lambda p: p.get("name",""))
-    return render_template("shop.html", products=products, categories=cats, q=q, cat=cat, sort=sort)
+    return render_template("shop.html", products=products, categories=cats, q=q, cat=cat, sort=sort, min_price=min_price, max_price=max_price)
 
 @app.route("/product/<int:pid>")
 def product_detail(pid):

@@ -8,6 +8,16 @@
       <a class="cat {{ 'active' if not cat }}" href="/shop"><span class="icon">🌐</span>All</a>
       {% for c in categories %}<a class="cat {{ 'active' if cat == c.id }}" href="/shop?cat={{ c.id }}"><span class="icon">{{ c.icon }}</span>{{ c.name }}</a>{% endfor %}
     </div>
+    <div class="pricebar">
+      <div class="pricefield">
+        <input id="min_price" name="min_price" value="{{ min_price }}" placeholder="Min">
+        <span class="pill">{{ site.get('currency','SSP') }}</span>
+      </div>
+      <div class="pricefield">
+        <input id="max_price" name="max_price" value="{{ max_price }}" placeholder="Max">
+        <span class="pill">{{ site.get('currency','SSP') }}</span>
+      </div>
+    </div>
     <select name="sort" id="sort" aria-label="Sort products">
       <option value="">Sort</option>
       <option value="low" {{ 'selected' if sort == 'low' }}>Lowest</option>
