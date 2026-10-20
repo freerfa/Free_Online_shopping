@@ -3,7 +3,7 @@
 {% for o in orders %}
 <details class="card prodrow">
   <summary><b>#{{ o["id"] }}</b> {{ o["customer_name"] }} — {{ o["total"] }} {{ site.get('currency','SSP') }} <span class="pill {{ 'warn' if 'pending' in o['status'] else 'ok' }}">{{ o["status"] }}</span> <span class="pill {{ 'ok' if o['payment_status']=='paid' else 'warn' if o['payment_status']=='pending' else 'bad' }}">{{ o["payment_method"] or '—' }} / {{ o["payment_status"] or 'pending' }}</span></summary>
-  <p class="muted">📞 {{ o["phone"] }} {% if o["email"] %}· ✉️ {{ o["email"] }}{% endif %}<br>📍 {{ o["address"] }}, {{ o["city"] }}<br>🕒 {{ o["created" ] }}{% if o["notes"] %}<br>📝 {{ o["notes"] }}{% endif %}{% if o["receipt_path"] %}<br>🧾 <a href="{{ url_for('uploads', fname=o['receipt_path']) }}" target="_blank">Payment receipt</a>{% endif %}</p>
+  <p class="muted">📞 {{ o["phone"] }} {% if o["email"] %}· ✉️ {{ o["email"] }}{% endif %}<br>📍 {{ o["address"] }}, {{ o["city"] }}<br>🕒 {{ o["created" ] }}{% if o["notes"] %}<br>📝 {{ o["notes"] }}{% endif %}{% if o["receipt_path"] %}<br>🧾 <a href="{{ url_for('uploads', fname=o['receipt_path']) }}" target="_blank">Payment receipt</a>{% if o["payment_status"]=="paid" and o["paid_at"] %}<br>✅ Paid at: {{ o["paid_at"] }}{% endif %}{% endif %}</p>
   <ul>{% for it in json.loads(o["items_json"]) %}<li>{{ it.product.name }} × {{ it.qty }} = {{ it.line }}</li>{% endfor %}</ul>
   <form method="post" class="inline">
     <input type="hidden" name="csrf_token" value="{{ csrf }}">

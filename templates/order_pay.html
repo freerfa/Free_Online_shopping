@@ -1,16 +1,24 @@
 {% extends "base.html" %}{% block content %}
 <h1>💳 Pay for Order #{{ o["id"] }}</h1>
+{% if not pay_enabled %}
+<div class="flash warning">
+  ⚠️ The payment system is currently disabled by the admin. Payment details cannot be submitted.
+</div>
+{% endif %}
 <p class="muted">Total: <strong>{{ o["total"] }} {{ site.get('currency','SSP') }}</strong> · Status: <span class="pill warn">{{ o["payment_status"] }}</span></p>
 
 <div class="cardgrid2">
   <div class="card">
     <h3>Submit Payment Details</h3>
+{% if not pay_enabled %}
+<div class="flash warning">Payment submissions are disabled while the payment system is switched off.</div>
+{% else %}
     <p class="muted">Upload a photo/screenshot of your payment receipt (bank slip, mobile money confirmation, card receipt). An admin will verify it.</p>
     <form method="post" enctype="multipart/form-data"><input type="hidden" name="csrf_token" value="{{ csrf }}">
       <input type="hidden" name="action" value="pay">
       <label>Payment Method
         <select name="payment_method" required>
-          {% for code, name, icon in types %}<option value="{{ code }}">{{ icon }} {{ name }}</option>{% endfor %}
+          {% for code, name in types %}<option value="{{ code }}">{{ name }}</option>{% endfor %}
         </select>
       </label>
       <label>Transaction Reference (optional) <input name="payment_reference" placeholder="e.g. MTN12345678"></label>
@@ -18,6 +26,7 @@
       <p class="muted small">Allowed: png, jpg, jpeg, webp, gif, pdf (max 5MB).</p>
       <button class="btn" type="submit">Submit Payment</button>
     </form>
+{% endif %}
     <form method="post" class="inline" style="margin-top:.8rem"><input type="hidden" name="csrf_token" value="{{ csrf }}"><input type="hidden" name="action" value="cancel"><button class="btn small ghost" onclick="return confirm('Cancel this payment?')">Cancel Payment</button></form>
   </div>
 

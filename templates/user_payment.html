@@ -1,16 +1,24 @@
 {% extends "base.html" %}{% block content %}
 <h1>💳 My Payment Methods</h1>
+{% if not pay_enabled %}
+<div class="flash warning">
+  ⚠️ The payment system is currently disabled by the admin. You cannot add or manage payment methods.
+</div>
+{% endif %}
 <p class="muted">Save your preferred payment methods for faster checkout. Card numbers are never stored in full — only the last 4 digits.</p>
 
 <div class="cardgrid2">
   <div class="card">
     <h3>Add Payment Method</h3>
+{% if not pay_enabled %}
+<div class="flash warning">Payment methods cannot be added while the payment system is disabled.</div>
+{% else %}
     <form method="post"><input type="hidden" name="csrf_token" value="{{ csrf }}">
       <input type="hidden" name="action" value="add">
       <label>Method
         <select name="ptype" id="ptype" required>
           <option value="">Choose…</option>
-          {% for code, name, icon in types %}<option value="{{ code }}">{{ icon }} {{ name }}</option>{% endfor %}
+          {% for code, name in types %}<option value="{{ code }}">{{ name }}</option>{% endfor %}
         </select>
       </label>
       <div id="pm-visa" style="display:none">
@@ -28,6 +36,7 @@
       <label>Label <input name="label" placeholder="e.g. My Visa Card"></label>
       <button class="btn" type="submit">Save Method</button>
     </form>
+{% endif %}
   </div>
 
   <div class="card">

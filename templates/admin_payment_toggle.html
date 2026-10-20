@@ -1,0 +1,27 @@
+{% extends "admin_base.html" %}{% block admin %}
+<h1>🔘 Payment settings</h1>
+<p class="muted">Enable or disable the customer-facing payment system. When disabled, customers can only place orders with Cash on Delivery.</p>
+
+<div class="card">
+  <form method="post"><input type="hidden" name="csrf_token" value="{{ csrf }}">
+    <div class="frow">
+      <label>
+        <input type="checkbox" name="enabled" value="on" {% if enabled %}checked{% endif %}>
+        Payment system enabled
+      </label>
+    </div>
+    <p class="muted">When <strong>off</strong>, the checkout payment-method picker, saved payment methods, and receipt submission are hidden. Only Cash on Delivery orders can be placed. Admin payment records remain viewable.</p>
+    <button class="btn" type="submit">Save setting</button>
+  </form>
+</div>
+
+<div class="card">
+  <h3>Current state</h3>
+  <p class="muted">
+    Payment system is <strong>{{ 'enabled' if enabled else 'disabled' }}</strong>.
+    {% if not enabled %}
+    Customers will see only Cash on Delivery at checkout.
+    {% endif %}
+  </p>
+</div>
+{% endblock %}

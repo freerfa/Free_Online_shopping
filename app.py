@@ -184,6 +184,11 @@ def visible_products():
 def ad_fee():
     return int(get_blob("fees", {}).get("per_post", 5000))
 
+
+def payment_enabled():
+    """Whether the customer-facing payment system is switched on."""
+    return bool(get_blob("site", {}).get("payment_enabled", True))
+
 def user_record(username):
     for u in get_blob("users", []):
         if u.get("username") == username:
@@ -435,6 +440,7 @@ def checkout():
     if not items:
         flash("Your cart is empty.", "warning")
         return redirect(url_for("shop"))
+    pay_enabled = payment_enabled()
     # user's saved payment methods
     pms = []
     u = current_user()
@@ -455,10 +461,14 @@ def checkout():
         notes = request.form.get("notes","").strip()
         if not name or not phone or not address:
             flash("Name, phone and address are required.", "danger")
-            return render_template("checkout.html", items=items, total=total, pms=pms)
+            return render_template("checkout.html", items=items, total=total, pms=pms, pay_enabled=pay_enabled)
         if email and not re.match(r"^[^@\s]+@[^@\s]+\.[^@\s]+$", email):
             flash("Invalid email address.", "danger")
-            return render_template("checkout.html", items=items, total=total, pms=pms)
+            return render_template("checkout.html", items=items, total=total, pms=pms, pay_enabled=pay_enabled)
+
+        if not pay_enabled and chosen.lower() != "cod":
+            flash("The payment system is currently disabled. Only Cash on Delivery is available.", "danger")
+            return render_template("checkout.html", items=items, total=total, pms=pms, pay_enabled=pay_enabled)
         con = db()
         con.execute("""INSERT INTO orders(customer_name,email,phone,address,city,notes,items_json,total,status,created,payment_method,payment_status)
                            VALUES(?,?,?,?,?,?,?,?,?,?,?,?)""",
@@ -485,7 +495,7 @@ def checkout():
         if is_cod:
             return redirect(url_for("order_success", oid=order_id))
         return redirect(url_for("order_pay", oid=order_id))
-    return render_template("checkout.html", items=items, total=total, pms=pms)
+    return render_template("checkout.html", items=items, total=total, pms=pms, pay_enabled=pay_enabled)
 
 @app.route("/order/<int:oid>")
 def order_success(oid):
@@ -512,6 +522,9 @@ def _pm_id():
 @app.route("/user/payment", methods=["GET", "POST"])
 @login_required
 def user_payment():
+    if not payment_enabled():
+        flash("The payment system is currently disabled.", "warning")
+        return redirect(url_for("account"))
     me = current_user().get("username", "")
     users = get_blob("users", [])
     u = next((x for x in users if x.get("username") == me), None)
@@ -558,13 +571,16 @@ def user_payment():
             set_blob("users", users)
             flash("Default payment method updated.", "success")
             return redirect(url_for("user_payment"))
-    return render_template("user_payment.html", pms=pms, types=PAYMENT_TYPES)
+    return render_template("user_payment.html", pms=pms, types=PAYMENT_TYPES, pay_enabled=payment_enabled())
 
 
 @app.route("/order/pay/<int:oid>", methods=["GET", "POST"])
 @login_required
 def order_pay(oid):
     con = db()
+    if not payment_enabled():
+        flash("The payment system is currently disabled.", "warning")
+        return redirect(url_for("account"))
     o = con.execute("SELECT * FROM orders WHERE id=?", (oid,)).fetchone()
     con.close()
     if not o:
@@ -581,7 +597,7 @@ def order_pay(oid):
                 rpath, err = save_upload(receipt)
                 if err:
                     flash(err, "danger")
-                    return render_template("order_pay.html", o=o, items=items, types=PAYMENT_TYPES)
+                    return render_template("order_pay.html", o=o, items=items, types=PAYMENT_TYPES, pay_enabled=payment_enabled())
             con = db()
             con.execute(
                 "UPDATE orders SET payment_method=?, payment_reference=?, receipt_path=?, payment_status=? WHERE id=?",
@@ -598,7 +614,7 @@ def order_pay(oid):
             con.close()
             flash("Payment cancelled.", "info")
             return redirect(url_for("account"))
-    return render_template("order_pay.html", o=o, items=items, types=PAYMENT_TYPES)
+    return render_template("order_pay.html", o=o, items=items, types=PAYMENT_TYPES, pay_enabled=payment_enabled())
 
 
 @app.route("/contact", methods=["GET", "POST"])
@@ -625,6 +641,10 @@ def contact():
 def admin_payments():
     con = db()
     if request.method == "POST":
+        if not payment_enabled():
+            flash("The payment system is currently disabled.", "warning")
+            con.close()
+            return redirect(url_for("admin_payments"))
         pid = request.form.get("pid")
         action = request.form.get("action")
         if action in ("verify", "reject") and pid:
@@ -659,6 +679,17 @@ def admin_payments():
     con.close()
     users = get_blob("users", [])
     return render_template("admin_payments.html", rows=rows, users=users)
+
+@app.route("/admin/settings/payments", methods=["GET", "POST"])
+@admin_required
+def admin_payment_toggle():
+    site = get_blob("site", {})
+    if request.method == "POST":
+        site["payment_enabled"] = request.form.get("enabled") == "on"
+        set_blob("site", site)
+        flash(f"Payment system {'enabled' if site['payment_enabled'] else 'disabled'}.", "success")
+        return redirect(url_for("admin_payment_toggle"))
+    return render_template("admin_payment_toggle.html", enabled=site.get("payment_enabled", True))
 
 @app.route("/apply/<int:pid>", methods=["GET", "POST"])
 def apply(pid):
@@ -751,6 +782,9 @@ def account():
 @app.route("/myproducts", methods=["GET", "POST"])
 @login_required
 def myproducts():
+    if not payment_enabled():
+        flash("The payment system is currently disabled.", "warning")
+        return redirect(url_for("account"))
     me = current_user().get("username", "")
     fee = ad_fee()
     cat_ids = {c.get("id") for c in get_blob("categories", [])}
@@ -988,6 +1022,9 @@ def admin_products():
 def admin_listings():
     products = get_blob("products", [])
     if request.method == "POST":
+        if not payment_enabled():
+            flash("The payment system is currently disabled.", "warning")
+            return redirect(url_for("admin_payments"))
         act = request.form.get("action", "")
         pid = int(request.form.get("pid", 0))
         if act == "fee_set":
@@ -1083,7 +1120,7 @@ def admin_orders():
     if request.method == "POST":
         oid = request.form.get("oid")
         if request.form.get("action") == "verify_payment" and oid:
-            con.execute("UPDATE orders SET payment_status='paid' WHERE id=?", (oid,))
+            con.execute("UPDATE orders SET payment_status='paid', paid_at=? WHERE id=?", (datetime.utcnow().isoformat(), oid))
             flash("Order payment marked as paid.", "success")
         elif request.form.get("action") == "reject_payment" and oid:
             con.execute("UPDATE orders SET payment_status='rejected' WHERE id=?", (oid,))
