@@ -1,6 +1,21 @@
 {% extends "base.html" %}
 {% block content %}
 <h1>Shop</h1>
-<form method="get" class="filters"><input name="q" value="{{ q }}" placeholder="Search..."><button>Go</button></form>
+<section class="shoptools">
+  <form method="get" class="filterbar">
+    <input name="q" value="{{ q }}" placeholder="Search products...">
+    <div class="catbar">
+      <a class="cat {{ 'active' if not cat }}" href="/shop"><span class="icon">🌐</span>All</a>
+      {% for c in categories %}<a class="cat {{ 'active' if cat == c.id }}" href="/shop?cat={{ c.id }}"><span class="icon">{{ c.icon }}</span>{{ c.name }}</a>{% endfor %}
+    </div>
+    <select name="sort" id="sort" aria-label="Sort products">
+      <option value="">Sort</option>
+      <option value="low" {{ 'selected' if sort == 'low' }}>Lowest</option>
+      <option value="high" {{ 'selected' if sort == 'high' }}>Highest</option>
+      <option value="name" {{ 'selected' if sort == 'name' }}>Name</option>
+    </select>
+    <button type="submit" class="btn">Go</button>
+  </form>
+</section>
 <div class="grid">{% for p in products %}{% include "card.html" %}{% else %}<p>No products found.</p>{% endfor %}</div>
 {% endblock %}

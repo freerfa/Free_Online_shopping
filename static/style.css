@@ -158,4 +158,22 @@ h1,h2{margin:1rem 0 .6rem}
 /* Fluid type scales with the viewport, never overflows */
 h1{font-size:clamp(1.5rem,4vw,2.6rem);line-height:1.15}
 h2{font-size:clamp(1.2rem,3vw,2rem);line-height:1.2}
-h3{font-size:clamp(1rem,2.4vw,1.5rem);line-height:1.25}
+/* ---- Shop filter bar ---- */
+.shoptools{padding:1.2rem 0 2rem}
+.filterbar{display:flex;flex-wrap:wrap;align-items:center;gap:.6rem max(.75rem,.9rem);max-width:1060px;margin:0 auto}
+.filterbar input{flex:1 1 150px;min-width:130px;padding:.6rem 1rem;border:1px solid var(--border);border-radius:8px;background:var(--card);color:var(--text);font:inherit}
+.filterbar .catbar{display:flex;flex-wrap:wrap;gap:.4rem}
+.filterbar .cat{padding:.35rem .8rem;font-size:.85rem}
+.filterbar select{flex:1 1 120px;min-width:90px;padding:.55rem 1rem;border:1px solid var(--border);border-radius:8px;background:var(--card);color:var(--text);font:inherit;cursor:pointer}
+.filterbar .btn{margin-left:.35rem}
+@media (max-width: 640px){
+  .filterbar input{flex:1 1 100%;min-width:100%}
+  .filterbar select{width:100%;min-width:100%}
+}
+/* ---- Category filter chips (homepage + shop) ---- */
+.catbar{display:flex;flex-wrap:wrap;justify-content:center;gap:.5rem}
+.cat{display:inline-flex;align-items:center;gap:.45rem;padding:.55rem 1.1rem;border-radius:999px;border:1.5px solid var(--border);background:var(--card);color:var(--text);font-weight:700;font-size:.92rem;transition:all .15s ease}
+.cat .icon{font-size:1.1rem}
+.cat:hover{border-color:var(--brand);color:var(--brand);transform:translateY(-1px)}
+.cat.active{background:var(--brand);border-color:var(--brand);color:#fff;font-weight:800;box-shadow:0 4px 14px rgba(79,70,229,.28)}
+.cat.active .icon{color:#fff}
