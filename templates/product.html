@@ -14,20 +14,20 @@
 </div>
 <div>
 <h1>{{ p.name }}</h1>
-{% if p.get('seller') %}<p class="muted">🏪 Sold by <b>{{ p.seller }}</b> — marketplace seller</p>{% endif %}
+{% if p.get('seller') %}<p class="muted">{{ 'product.sold_by'|t(seller=p.seller) }}</p>{% endif %}
 {% if p.price %}
-<p class="price">{{ site.get('currency','SSP') }} {{ p.price }}</p>
+<p class="price">{{ currency_symbol }} {{ p.price|curfmt(currency) }}</p>
 {% endif %}
 <p>{{ p.desc }}</p>
-<p>{% if p.category == 'jobs' %}Openings: {{ p.stock }}{% else %}Stock: {{ p.stock }}{% endif %}</p>
+<p>{% if p.category == 'jobs' %}{{ 'product.openings'|t(stock=p.stock) }}{% else %}{{ 'product.stock'|t(stock=p.stock) }}{% endif %}</p>
 {% if p.category == 'service' %}
-<a class="btn" href="/contact?subject={{ p.name|urlencode }}">Contact us</a>
+<a class="btn" href="/contact?subject={{ p.name|urlencode }}">{{ 'product.service_contact'|t }}</a>
 {% elif p.category == 'jobs' %}
-<a class="btn" href="/apply/{{ p.id }}">Apply now</a>
+<a class="btn" href="/apply/{{ p.id }}">{{ 'product.jobs_apply'|t }}</a>
 {% else %}
-<form method="post" action="/cart/add/{{ p.id }}"><input type="hidden" name="csrf_token" value="{{ csrf }}"><input type="number" name="qty" value="1" min="1"><button class="btn">Add to cart</button></form>
+<form method="post" action="/cart/add/{{ p.id }}"><input type="hidden" name="csrf_token" value="{{ csrf }}"><input type="number" name="qty" value="1" min="1"><button class="btn">{{ 'product.add_to_cart'|t }}</button></form>
 {% endif %}
 </div>
 </div>
-<h2>Related</h2><div class="grid">{% for p in related %}{% include "card.html" %}{% endfor %}</div>
+<h2>{{ 'product.related'|t }}</h2><div class="grid">{% for p in related %}{% include "card.html" %}{% endfor %}</div>
 {% endblock %}

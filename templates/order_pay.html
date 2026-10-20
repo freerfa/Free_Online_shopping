@@ -1,47 +1,47 @@
 {% extends "base.html" %}{% block content %}
-<h1>💳 Pay for Order #{{ o["id"] }}</h1>
+<h1>{{ 'order_pay.title'|t(id=o["id"]) }}</h1>
 {% if not pay_enabled %}
 <div class="flash warning">
-  ⚠️ The payment system is currently disabled by the admin. Payment details cannot be submitted.
+  {{ 'order_pay.payment_disabled'|t }}
 </div>
 {% endif %}
-<p class="muted">Total: <strong>{{ o["total"] }} {{ site.get('currency','SSP') }}</strong> · Status: <span class="pill warn">{{ o["payment_status"] }}</span></p>
+<p class="muted">{{ 'order_pay.total'|t }} <strong>{{ o["total"]|curfmt(currency) }} {{ currency_symbol }}</strong> · {{ 'order_pay.status'|t }} <span class="pill warn">{{ o["payment_status"] }}</span></p>
 
 <div class="cardgrid2">
   <div class="card">
-    <h3>Submit Payment Details</h3>
+    <h3>{{ 'order_pay.submit_details'|t }}</h3>
 {% if not pay_enabled %}
-<div class="flash warning">Payment submissions are disabled while the payment system is switched off.</div>
+<div class="flash warning">{{ 'order_pay.payment_submissions_disabled'|t }}</div>
 {% else %}
-    <p class="muted">Upload a photo/screenshot of your payment receipt (bank slip, mobile money confirmation, card receipt). An admin will verify it.</p>
+    <p class="muted">{{ 'order_pay.upload_receipt'|t }}</p>
     <form method="post" enctype="multipart/form-data"><input type="hidden" name="csrf_token" value="{{ csrf }}">
       <input type="hidden" name="action" value="pay">
-      <label>Payment Method
+      <label>{{ 'order_pay.payment_method'|t }}
         <select name="payment_method" required>
-          {% for code, name in types %}<option value="{{ code }}">{{ name }}</option>{% endfor %}
+          {% for code, name in types %}<option value="{{ code }}">{{ ('order_pay.pm_' ~ code)|t }}</option>{% endfor %}
         </select>
       </label>
-      <label>Transaction Reference (optional) <input name="payment_reference" placeholder="e.g. MTN12345678"></label>
-      <label>Receipt / Proof of Payment <input type="file" name="receipt" accept="image/*,.pdf" required></label>
-      <p class="muted small">Allowed: png, jpg, jpeg, webp, gif, pdf (max 5MB).</p>
-      <button class="btn" type="submit">Submit Payment</button>
+      <label>{{ 'order_pay.transaction_ref'|t }} <input name="payment_reference" placeholder="e.g. MTN12345678"></label>
+      <label>{{ 'order_pay.receipt'|t }} <input type="file" name="receipt" accept="image/*,.pdf" required></label>
+      <p class="muted small">{{ 'order_pay.allowed'|t }}</p>
+      <button class="btn" type="submit">{{ 'order_pay.submit_payment'|t }}</button>
     </form>
 {% endif %}
-    <form method="post" class="inline" style="margin-top:.8rem"><input type="hidden" name="csrf_token" value="{{ csrf }}"><input type="hidden" name="action" value="cancel"><button class="btn small ghost" onclick="return confirm('Cancel this payment?')">Cancel Payment</button></form>
+    <form method="post" class="inline" style="margin-top:.8rem"><input type="hidden" name="csrf_token" value="{{ csrf }}"><input type="hidden" name="action" value="cancel"><button class="btn small ghost" onclick="return confirm('{{ 'order_pay.cancel_confirm'|t }}')">{{ 'order_pay.cancel_payment'|t }}</button></form>
   </div>
 
   <div class="card">
-    <h3>Order Items</h3>
+    <h3>{{ 'order_pay.order_items'|t }}</h3>
     <ul>
     {% for it in items %}
-      <li>{{ it.product.name }} × {{ it.qty }} = {{ it.line }}</li>
+      <li>{{ it.product.name }} × {{ it.qty }} = {{ it.line|curfmt(currency) }}</li>
     {% else %}
-      <li class="muted">No items.</li>
+      <li class="muted">{{ 'order_pay.no_items'|t }}</li>
     {% endfor %}
     </ul>
-    <p class="muted"><strong>Total:</strong> {{ o["total"] }} {{ site.get('currency','SSP') }}</p>
+    <p class="muted"><strong>{{ 'order_pay.total'|t }}</strong> {{ o["total"]|curfmt(currency) }} {{ currency_symbol }}</p>
     {% if o["receipt_path"] %}
-    <p class="muted">Receipt already uploaded: <a href="{{ url_for('uploads', fname=o['receipt_path']) }}" target="_blank">View receipt</a></p>
+    <p class="muted">{{ 'order_pay.receipt_uploaded'|t }} <a href="{{ url_for('uploads', fname=o['receipt_path']) }}" target="_blank">{{ 'order_pay.view_receipt'|t }}</a></p>
     {% endif %}
   </div>
 </div>

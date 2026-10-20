@@ -11,3 +11,4 @@ data/app_docs/*
 .env
 *.log
 .DS_Store
+~$*.docx

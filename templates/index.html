@@ -1,17 +1,17 @@
 {% extends "base.html" %}
 {% block content %}
 <section class="hero"><h1>{{ site.get('hero_title') }}</h1><p>{{ site.get('hero_subtitle') }}</p><a class="btn" href="/shop">{{ site.get('hero_cta','Shop Now') }}</a></section>
-<h2>Categories</h2>
+<h2>{{ 'index.categories'|t }}</h2>
 <div class="catbar">
-  <a class="cat {{ 'active' if not request.args.get('cat') }}" href="/shop"><span class="icon">🌐</span>All</a>
+<a class="cat {{ 'active' if not request.args.get('cat') }}" href="/shop"><span class="icon">🌐</span>{{ 'index.all'|t }}</a>
   {% for c in categories %}<a class="cat {{ 'active' if request.args.get('cat') == c.id }}" href="/shop?cat={{ c.id }}"><span class="icon">{{ c.icon }}</span>{{ c.name }}</a>{% endfor %}
 </div>
 
-<h2>Featured</h2><div class="grid">{% for p in featured %}{% include "card.html" %}{% endfor %}</div>
-<h2>What customers say</h2>
+<h2>{{ 'index.featured'|t }}</h2><div class="grid">{% for p in featured %}{% include "card.html" %}{% endfor %}</div>
+<h2>{{ 'index.testimonials'|t }}</h2>
 <div class="mq cardmq"><div class="mq-track">{% for i in range(2) %}<span class="mq-seq">{% for t in testimonials %}<div class="card tm"><p>"{{ t.text }}"</p><b>- {{ t.name }}</b> <span class="pill">{{ t.stars }}★</span></div>{% endfor %}</span>{% endfor %}</div></div>
 {% if partners %}
-<h2>Trusted partners</h2>
+<h2>{{ 'index.partners'|t }}</h2>
 <div class="mq cardmq"><div class="mq-track slow">{% for i in range(2) %}<span class="mq-seq">{% for pt in partners %}<span class="card partner">{{ pt }}</span>{% endfor %}</span>{% endfor %}</div></div>
 {% endif %}
 {% endblock %}

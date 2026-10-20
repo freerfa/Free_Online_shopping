@@ -15,6 +15,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
 from flask import (Flask, render_template, request, redirect, url_for, session,
                    flash, g, abort, send_from_directory, jsonify)
+from jinja2 import pass_context
 
 # ---------- Config ----------
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -234,6 +235,24 @@ def find_user(username):
             return a, True
     return None, False
 
+def find_user_by_login(identifier):
+    """Login accepts a username OR an email address (form says "Username or email").
+    Matches the username first, then falls back to the email field."""
+    ident = (identifier or "").strip().lower()
+    if not ident:
+        return None, False
+    u, admin_flag = find_user(ident)
+    if u:
+        return u, admin_flag
+    # email fallback — customer accounts first, then admin accounts
+    for u in get_blob("users", []):
+        if (u.get("email") or "").strip().lower() == ident:
+            return u, False
+    for a in get_blob("admin_users", []):
+        if (a.get("email") or "").strip().lower() == ident:
+            return a, True
+    return None, False
+
 # ---------- Uploads ----------
 def allowed_ext(fname):
     return "." in fname and fname.rsplit(".",1)[1].lower() in ALLOWED_EXTS
@@ -330,6 +349,62 @@ def cart_detailed():
         items.append({"product": p, "qty": qty, "line": line})
     return items, total, count
 
+# ---------- Language (multi-language support) ----------
+DEFAULT_LANGUAGE = "en"
+LANGUAGES_DIR = os.path.join(BASE_DIR, "static", "lang")
+
+
+def load_languages():
+    """Load all language JSON files from static/lang/."""
+    langs = {}
+    try:
+        for fname in os.listdir(LANGUAGES_DIR):
+            if fname.endswith(".json"):
+                path = os.path.join(LANGUAGES_DIR, fname)
+                with open(path, "r", encoding="utf-8") as f:
+                    data = json.load(f)
+                langs[data.get("code", fname[:-5])] = data
+    except FileNotFoundError:
+        pass
+    if DEFAULT_LANGUAGE not in langs:
+        langs[DEFAULT_LANGUAGE] = {
+            "code": DEFAULT_LANGUAGE,
+            "name": "English",
+            "dir": "ltr",
+            "strings": {},
+        }
+    return langs
+
+
+LANGUAGES = load_languages()
+
+
+@app.template_filter("t")
+@pass_context
+def translate(ctx, key, **kwargs):
+    """Translate a key using the current language; fall back to English, then the key itself.
+
+    Declared with ``pass_context`` on purpose: Jinja's optimizer constant-folds
+    filters whose arguments are all literals (e.g. ``{{ 'nav.cart'|t }}``), which
+    would bake the language of the *first* request into the compiled template
+    and serve that language to every later request. Passing the context marks
+    the filter as context-dependent, so it is evaluated per request.
+    """
+    lang_code = request.cookies.get("language") or DEFAULT_LANGUAGE
+    lang = LANGUAGES.get(lang_code) or LANGUAGES.get(DEFAULT_LANGUAGE)
+    strings = lang.get("strings", {}) if lang else {}
+    text = strings.get(key)
+    if text is None:
+        en = LANGUAGES.get(DEFAULT_LANGUAGE, {})
+        text = en.get("strings", {}).get(key)
+    if text is None:
+        text = key
+    try:
+        return text.format(**kwargs)
+    except (KeyError, ValueError):
+        return text
+
+
 @app.context_processor
 def inject_globals():
     content = get_all_content()
@@ -346,9 +421,102 @@ def inject_globals():
                  and x.get("status") in ("pending", "reviewing"))
     n_sellreq = sum(1 for x in get_blob("users", [])
                     if x.get("sell_request") == "pending" and not x.get("can_sell"))
+    currencies = site.get("currencies") or DEFAULT_CURRENCIES
+    currency = request.cookies.get("currency") or site.get("currency", "SSP")
+    if currency not in [c.get("code") for c in currencies]:
+        currency = site.get("currency", "SSP")
+    language = request.cookies.get("language") or DEFAULT_LANGUAGE
+    if language not in LANGUAGES:
+        language = DEFAULT_LANGUAGE
+    lang_dir = LANGUAGES[language].get("dir", "ltr") if language in LANGUAGES else "ltr"
+    currency_symbol = next((c.get("symbol") for c in currencies if c.get("code") == currency), site.get("currency", "SSP"))
     return dict(site=site, content=content, cart_count=cart_count,
-                csrf=csrf_token(), user=current_user(), is_admin=is_admin(), json=json,
-                n_apps=n_apps, n_pend=n_pend, n_sellreq=n_sellreq)
+                csrf=csrf_token(), json=json,
+                n_apps=n_apps, n_pend=n_pend, n_sellreq=n_sellreq,
+                currency=currency, currencies=currencies, currency_symbol=currency_symbol,
+                language=language, languages=LANGUAGES, lang_dir=lang_dir,
+                user=current_user(), is_admin=is_admin())
+
+# ---------- Currency (multi-currency support) ----------
+DEFAULT_CURRENCIES = [
+    {"code": "SSP", "name": "South Sudanese Pound", "symbol": "SSP", "rate": 1.0, "decimals": 0},
+    {"code": "USD", "name": "US Dollar", "symbol": "US$", "rate": 0.000741, "decimals": 2},
+    {"code": "EGP", "name": "Egyptian Pound", "symbol": "\u00a3", "rate": 0.0303, "decimals": 2},
+    {"code": "KES", "name": "Kenyan Shilling", "symbol": "KSh", "rate": 0.0909, "decimals": 2},
+    {"code": "XOF", "name": "West African CFA Franc", "symbol": "CFA", "rate": 0.444, "decimals": 0},
+    {"code": "UGX", "name": "Ugandan Shilling", "symbol": "USh", "rate": 2.74, "decimals": 0},
+    {"code": "ETB", "name": "Ethiopian Birr", "symbol": "Br", "rate": 0.10, "decimals": 2},
+    {"code": "SDG", "name": "Sudanese Pound", "symbol": "SDG", "rate": 0.444, "decimals": 2},
+    {"code": "TZS", "name": "Tanzanian Shilling", "symbol": "TSh", "rate": 1.85, "decimals": 0},
+    {"code": "RWF", "name": "Rwandan Franc", "symbol": "RF", "rate": 0.963, "decimals": 0},
+    {"code": "BIF", "name": "Burundian Franc", "symbol": "FBu", "rate": 2.19, "decimals": 0},
+    {"code": "NGN", "name": "Nigerian Naira", "symbol": "₦", "rate": 1.11, "decimals": 2},
+    {"code": "GBP", "name": "British Pound", "symbol": "£", "rate": 0.000585, "decimals": 2},
+    {"code": "EUR", "name": "Euro", "symbol": "€", "rate": 0.000681, "decimals": 2},
+    {"code": "AED", "name": "UAE Dirham", "symbol": "AED", "rate": 0.00272, "decimals": 2},
+    {"code": "CNY", "name": "Chinese Yuan", "symbol": "¥", "rate": 0.00537, "decimals": 2},
+]
+
+
+@app.before_request
+def persist_currency():
+    """Persist the chosen currency in a cookie and redirect to a clean URL."""
+    code = request.args.get("currency", "").strip().upper()
+    if not code:
+        return
+    qs = request.full_path.split("?", 1)[1] if "?" in request.full_path else ""
+    parts = [p for p in qs.split("&") if p.split("=", 1)[0] != "currency"]
+    new_qs = "&".join(parts)
+    target = request.path + ("?" + new_qs if new_qs else "")
+    resp = redirect(target)
+    resp.set_cookie("currency", code, max_age=60 * 60 * 24 * 30, path="/")
+    return resp
+
+
+@app.before_request
+def persist_language():
+    """Persist the chosen language in a cookie and redirect to a clean URL."""
+    code = request.args.get("language", "").strip().lower()
+    if not code:
+        return
+    if code not in LANGUAGES:
+        return
+    qs = request.full_path.split("?", 1)[1] if "?" in request.full_path else ""
+    parts = [p for p in qs.split("&") if p.split("=", 1)[0] != "language"]
+    new_qs = "&".join(parts)
+    target = request.path + ("?" + new_qs if new_qs else "")
+    resp = redirect(target)
+    resp.set_cookie("language", code, max_age=60 * 60 * 24 * 30, path="/")
+    return resp
+
+
+@app.template_filter("curfmt")
+def format_currency(value, code=None):
+    """Render a base-currency price in the requested currency code."""
+    site = get_all_content().get("site", {}) or {}
+    currencies = site.get("currencies") or DEFAULT_CURRENCIES
+    code = (code or site.get("currency") or "SSP").upper()
+    cur = None
+    for c in currencies:
+        if c.get("code") == code:
+            cur = c
+            break
+    if cur is None and currencies:
+        cur = currencies[0]
+    if cur is None:
+        cur = DEFAULT_CURRENCIES[0]
+    try:
+        ssp = float(value)
+    except (TypeError, ValueError):
+        return ""
+    val = ssp * float(cur.get("rate", 1.0))
+    decimals = int(cur.get("decimals", 2))
+    sym = str(cur.get("symbol", ""))
+    if decimals > 0:
+        return "{:.{}f}".format(val, decimals)
+    return "{:,.0f}".format(val)
+
+
 
 @app.before_request
 def csrf_guard():
@@ -769,7 +937,7 @@ def login():
     if request.method == "POST":
         username = request.form.get("username","").strip()
         pw = request.form.get("password","")
-        u, admin_flag = find_user(username) or (None, False)
+        u, admin_flag = find_user_by_login(username)
         if u and check_password_hash(u.get("pw_hash",""), pw):
             session["user"] = {"username": u["username"], "is_admin": bool(admin_flag)}
             flash(f"Welcome back, {html.escape(u['username'])}!", "success")
@@ -918,6 +1086,11 @@ def admin_content():
         for f in ["name","tagline","hero_title","hero_subtitle","hero_cta","currency","announcement","about","mission","contact_email","contact_phone","address","footer_text"]:
             if f in request.form:
                 site[f] = request.form[f].strip()[:2000]
+    if "currencies" in request.form:
+        try:
+            site["currencies"] = json.loads(request.form["currencies"] or "[]")
+        except ValueError:
+            flash("Currency list is invalid JSON — not saved.", "danger")
         set_blob("site", site)
         flash("Site content saved.", "success")
         return redirect(url_for("admin_content"))
@@ -1231,8 +1404,9 @@ def admin_account():
         if act=="add":
             u = request.form.get("username","").strip()
             pw = request.form.get("password","")
+            em = request.form.get("email","").strip()[:150]
             if u and len(pw)>=4 and not any(a["username"].lower()==u.lower() for a in admins):
-                admins.append({"username":u,"pw_hash":hash_pw(pw),"created":datetime.utcnow().isoformat()})
+                admins.append({"username":u,"email":html.escape(em),"pw_hash":hash_pw(pw),"created":datetime.utcnow().isoformat()})
                 set_blob("admin_users", admins); flash("Admin added.","success")
             else: flash("Invalid or duplicate admin.","danger")
         elif act=="password":
@@ -1240,13 +1414,20 @@ def admin_account():
             for a in admins:
                 if a["username"]==me: a["pw_hash"]=hash_pw(request.form.get("password",""))
             set_blob("admin_users", admins); flash("Password changed.","success")
+        elif act=="email":
+            me = current_user()["username"]
+            em = request.form.get("email","").strip()[:150]
+            for a in admins:
+                if a["username"]==me: a["email"]=html.escape(em)
+            set_blob("admin_users", admins); flash("Email updated.","success")
         elif act=="delete":
             if len(admins)>1:
                 admins=[a for a in admins if a["username"]!=request.form.get("username")]
                 set_blob("admin_users", admins); flash("Admin removed.","info")
             else: flash("Cannot delete last admin.","danger")
         return redirect(url_for("admin_account"))
-    return render_template("admin_account.html", admins=admins)
+    me_rec = next((a for a in admins if a.get("username") == (current_user() or {}).get("username")), {})
+    return render_template("admin_account.html", admins=admins, me=me_rec)
 
 @app.route("/admin/export")
 @admin_required

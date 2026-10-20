@@ -1,50 +1,49 @@
 {% extends "base.html" %}{% block content %}
-<h1>Checkout — Total {{ total }} {{ site.get('currency','SSP') }}</h1>
+<h1>{{ 'checkout.title'|t(total=total|curfmt(currency), symbol=currency_symbol) }}</h1>
 
 {% if user %}
 {% if not pay_enabled %}
 <div class="flash warning">
-  ⚠️ The payment system is currently disabled by the admin. Only <strong>Cash on Delivery</strong> is available.
+  {{ 'checkout.payment_disabled'|t }}
 </div>
 {% endif %}
 <div class="card">
-  <h3>💳 Choose Payment Method</h3>
-  <p class="muted">Select how you want to pay. Non-COD payments require uploading a receipt after placing the order.</p>
+  <h3>{{ 'checkout.choose_payment'|t }}</h3>
+  <p class="muted">{{ 'checkout.payment_info'|t }}</p>
   <form method="post"><input type="hidden" name="csrf_token" value="{{ csrf }}">
     <label>
-      <input type="radio" name="chosen_payment" value="cod" checked> 🚚 Pay on Delivery
+      <input type="radio" name="chosen_payment" value="cod" checked> {{ 'checkout.cod'|t }}
     </label>
 {% if pay_enabled %}
     {% for pm in pms %}
     <label style="margin-left:1rem">
       <input type="radio" name="chosen_payment" value="{{ pm.id }}">
-      {{ pm.label }}
+      {{ ('checkout.' ~ pm.type)|t }}{% if pm.label and pm.label != pm.type %} ({{ pm.label }}){% endif %}
     </label>
     {% endfor %}
     <label style="margin-left:1rem">
-      <input type="radio" name="chosen_payment" value="new"> ➕ Add new at checkout
+      <input type="radio" name="chosen_payment" value="new"> {{ 'checkout.add_new'|t }}
     </label>
     <div id="pm-new" style="margin-top:.8rem;padding-top:.8rem;border-top:1px solid var(--border)">
-      <label>New method
+      <label>{{ 'checkout.new_method'|t }}
         <select name="payment" required>
-          <option value="Cash on Delivery">Cash on Delivery</option>
-          <option value="MTN MoMo">MTN Mobile Money</option>
-          <option value="Airtel Money">Airtel Money</option>
-          <option value="Bank Transfer">Bank Transfer</option>
-          <option value="Visa Card">Visa Card</option>
+      <option value="Cash on Delivery">{{ 'checkout.cash_on_delivery'|t }}</option>
+      <option value="MTN MoMo">{{ 'checkout.mtn_momo'|t }}</option>
+      <option value="Airtel Money">{{ 'checkout.airtel_money'|t }}</option>
+      <option value="Bank Transfer">{{ 'checkout.bank_transfer'|t }}</option>
+      <option value="Visa Card">{{ 'checkout.visa_card'|t }}</option>
         </select>
       </label>
     </div>
 {% endif %}
-    <div class="frow">
-      <input name="name" placeholder="Full name" required>
-      <input name="phone" placeholder="Phone" required>
-      <input name="email" placeholder="Email">
-      <input name="address" placeholder="Address" required>
-      <input name="city" value="Juba">
+      <input name="name" placeholder="{{ 'checkout.full_name'|t }}" required>
+      <input name="phone" placeholder="{{ 'checkout.phone'|t }}" required>
+      <input name="email" placeholder="{{ 'checkout.email'|t }}">
+      <input name="address" placeholder="{{ 'checkout.address'|t }}" required>
+      <input name="city" value="{{ 'checkout.city'|t }}">
+      <textarea name="notes" placeholder="{{ 'checkout.notes'|t }}"></textarea>
     </div>
-    <textarea name="notes" placeholder="Notes"></textarea>
-    <button class="btn" type="submit">Place order</button>
+    <button class="btn" type="submit">{{ 'checkout.place_order'|t }}</button>
   </form>
   <script>
     document.querySelectorAll('input[name="chosen_payment"]').forEach(function(r){
@@ -57,8 +56,8 @@
 </div>
 {% else %}
 <div class="card">
-  <h3>💳 Checkout</h3>
-  <p class="muted">Please <a href="{{ url_for('login') }}">log in</a> to place an order and choose a payment method.</p>
+  <h3>{{ 'checkout.title'|t(total=total|curfmt(currency), symbol=currency_symbol) }}</h3>
+  <p class="muted">{{ 'checkout.login_required'|t }} <a href="{{ url_for('login') }}">{{ 'checkout.log_in'|t }}</a></p>
 </div>
 {% endif %}
 {% endblock %}

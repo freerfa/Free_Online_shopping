@@ -2,25 +2,25 @@
 {% block content %}
 <div class="authgrid">
   <div class="card">
-    <h1>Apply for this job</h1>
+    <h1>{{ 'apply.title'|t }}</h1>
     {% if p.image %}<img class="pimg" src="{{ p.image }}" alt="{{ p.name }}">{% endif %}
     <h3>{{ p.name }}</h3>
     <p>{{ p.desc }}</p>
-    <p class="muted">Openings: {{ p.stock }} · Applications are reviewed as they arrive.</p>
+    <p class="muted">{{ 'apply.openings'|t(stock=p.stock) }}</p>
   </div>
   <div class="card">
-    <h3>📄 Your application</h3>
+    <h3>{{ 'apply.your_application'|t }}</h3>
     <form method="post" enctype="multipart/form-data">
       <input type="hidden" name="csrf_token" value="{{ csrf }}">
-      <label>Full name *<input name="name" required maxlength="100" placeholder="e.g. John Deng"></label>
-      <label>Email *<input name="email" type="email" required maxlength="150" placeholder="you@example.com"></label>
-      <label>Phone<input name="phone" maxlength="40" placeholder="+211..."></label>
-      <label>Why should we hire you? *<textarea name="message" rows="5" required placeholder="Tell us about your experience and skills..."></textarea></label>
-      <label class="doclab">📎 Upload your documents
+      <label>{{ 'apply.full_name'|t }}<input name="name" required maxlength="100" placeholder="e.g. John Deng"></label>
+      <label>{{ 'apply.email'|t }}<input name="email" type="email" required maxlength="150" placeholder="you@example.com"></label>
+      <label>{{ 'apply.phone'|t }}<input name="phone" maxlength="40" placeholder="+211..."></label>
+      <label>{{ 'apply.why_hire'|t }}<textarea name="message" rows="5" required placeholder="Tell us about your experience and skills..."></textarea></label>
+      <label class="doclab">{{ 'apply.upload_docs'|t }}
         <input type="file" name="doc" accept=".pdf,.doc,.docx,.txt,.rtf,.png,.jpg,.jpeg,.webp,.gif">
-        <small>CV / certificates — PDF, DOC, DOCX, TXT, RTF or image · max 5MB</small>
+        <small>{{ 'apply.docs_hint'|t }}</small>
       </label>
-      <button class="btn">Submit application</button>
+      <button class="btn">{{ 'apply.submit'|t }}</button>
     </form>
   </div>
 </div>

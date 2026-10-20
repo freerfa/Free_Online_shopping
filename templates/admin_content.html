@@ -9,6 +9,7 @@
       <label>Store name<input name="name" value="{{ site.get('name','') }}"></label>
       <label>Tagline<input name="tagline" value="{{ site.get('tagline','') }}"></label>
       <label>Currency<input name="currency" value="{{ site.get('currency','SSP') }}"></label>
+          <label style="margin-top:.5rem">Currency list (JSON)<textarea name="currencies" rows="10" style="width:100%">{{ json.dumps(site.get('currencies') or [], indent=2) }}</textarea></label>
       <label>Announcement bar<input name="announcement" value="{{ site.get('announcement','') }}"></label>
     </div>
   </div>

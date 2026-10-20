@@ -1,12 +1,12 @@
 {% extends "base.html" %}{% block content %}
-<h1>My account — {{ user.username }}</h1>
-<p class="muted"><a href="{{ url_for('user_payment') }}" class="btn small">Manage payment methods →</a></p>
-<h2>Recent orders</h2>
+<h1>{{ 'account.title'|t(user=user.username) }}</h1>
+<p class="muted"><a href="{{ url_for('user_payment') }}" class="btn small">{{ 'account.manage_payment'|t }}</a></p>
+<h2>{{ 'account.recent_orders'|t }}</h2>
 {% for o in orders %}
 <div class="card">
-  <strong>#{{ o["id"] }}</strong> — {{ o["total"] }} {{ site.get('currency','SSP') }} — {{ o["status"] }}
+  <strong>#{{ o["id"] }}</strong> — {{ o["total"]|curfmt(currency) }} {{ currency_symbol }} — {{ o["status"] }}
   <span class="pill {{ 'ok' if o['payment_status']=='paid' else 'warn' if o['payment_status']=='pending' else 'bad' }}">{{ o["payment_method"] or '—' }} / {{ o["payment_status"] or 'pending' }}</span>
-  <p class="muted">{{ o["created"] }}{% if o["payment_status"] == 'pending' and o["payment_method"] != 'cod' %} · <a href="{{ url_for('order_pay', oid=o["id"]) }}">Submit payment receipt →</a>{% endif %}</p>
+  <p class="muted">{{ o["created"] }}{% if o["payment_status"] == 'pending' and o["payment_method"] != 'cod' %} · <a href="{{ url_for('order_pay', oid=o["id"]) }}">{{ 'account.submit_receipt'|t }}</a>{% endif %}</p>
 </div>
-{% else %}<p>No orders yet.</p>{% endfor %}
+{% else %}<p>{{ 'account.no_orders'|t }}</p>{% endfor %}
 {% endblock %}

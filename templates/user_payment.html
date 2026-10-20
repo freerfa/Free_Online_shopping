@@ -1,46 +1,46 @@
 {% extends "base.html" %}{% block content %}
-<h1>💳 My Payment Methods</h1>
+<h1>{{ 'user_payment.title'|t }}</h1>
 {% if not pay_enabled %}
 <div class="flash warning">
-  ⚠️ The payment system is currently disabled by the admin. You cannot add or manage payment methods.
+  {{ 'user_payment.payment_disabled'|t }}
 </div>
 {% endif %}
-<p class="muted">Save your preferred payment methods for faster checkout. Card numbers are never stored in full — only the last 4 digits.</p>
+<p class="muted">{{ 'user_payment.intro'|t }}</p>
 
 <div class="cardgrid2">
   <div class="card">
-    <h3>Add Payment Method</h3>
+    <h3>{{ 'user_payment.add_method'|t }}</h3>
 {% if not pay_enabled %}
-<div class="flash warning">Payment methods cannot be added while the payment system is disabled.</div>
+<div class="flash warning">{{ 'user_payment.cannot_add'|t }}</div>
 {% else %}
     <form method="post"><input type="hidden" name="csrf_token" value="{{ csrf }}">
       <input type="hidden" name="action" value="add">
-      <label>Method
+      <label>{{ 'user_payment.method'|t }}
         <select name="ptype" id="ptype" required>
-          <option value="">Choose…</option>
-          {% for code, name in types %}<option value="{{ code }}">{{ name }}</option>{% endfor %}
+          <option value="">{{ 'user_payment.choose'|t }}</option>
+          {% for code, name in types %}<option value="{{ code }}">{{ ('user_payment.pm_' ~ code)|t }}</option>{% endfor %}
         </select>
       </label>
       <div id="pm-visa" style="display:none">
-        <label>Name on card <input name="card_name" placeholder="John Doe"></label>
-        <label>Last 4 digits <input name="card_last4" maxlength="4" inputmode="numeric"></label>
+        <label>{{ 'user_payment.card_name'|t }} <input name="card_name" placeholder="John Doe"></label>
+        <label>{{ 'user_payment.last4'|t }} <input name="card_last4" maxlength="4" inputmode="numeric"></label>
       </div>
       <div id="pm-momo" style="display:none">
-        <label>Mobile number <input name="phone" placeholder="0712345678" inputmode="tel"></label>
+        <label>{{ 'user_payment.mobile_number'|t }} <input name="phone" placeholder="0712345678" inputmode="tel"></label>
       </div>
       <div id="pm-bank" style="display:none">
-        <label>Bank name <input name="bank_name" placeholder="Equity Bank"></label>
-        <label>Account name <input name="account_name" placeholder="John Doe"></label>
-        <label>Last 4 digits <input name="account_last4" maxlength="4" inputmode="numeric"></label>
+        <label>{{ 'user_payment.bank_name'|t }} <input name="bank_name" placeholder="Equity Bank"></label>
+        <label>{{ 'user_payment.account_name'|t }} <input name="account_name" placeholder="John Doe"></label>
+        <label>{{ 'user_payment.last4'|t }} <input name="account_last4" maxlength="4" inputmode="numeric"></label>
       </div>
-      <label>Label <input name="label" placeholder="e.g. My Visa Card"></label>
-      <button class="btn" type="submit">Save Method</button>
+      <label>{{ 'user_payment.label'|t }} <input name="label" placeholder="e.g. My Visa Card"></label>
+      <button class="btn" type="submit">{{ 'user_payment.save_method'|t }}</button>
     </form>
 {% endif %}
   </div>
 
   <div class="card">
-    <h3>Saved Methods ({{ pms|length }})</h3>
+    <h3>{{ 'user_payment.saved_methods'|t(count=pms|length) }}</h3>
     {% if pms %}
     {% for pm in pms %}
     <div class="card" style="padding:.6rem;margin:.4rem 0;border-left:4px solid {% if pm.is_default %}var(--brand){% else %}var(--border){% endif %}">
@@ -50,20 +50,20 @@
         {% if pm.type == 'visa' %}Visa • ****{{ pm.card_last4 }} • {{ pm.card_name }}
         {% elif pm.type in ('mtn_momo','airtel_money') %}{{ pm.provider|upper }} MoMo • {{ pm.phone }}
         {% elif pm.type == 'bank_transfer' %}{{ pm.bank_name }} • ****{{ pm.account_last4 }} • {{ pm.account_name }}
-        {% elif pm.type == 'cod' %}Pay on Delivery{% endif %}
+        {% elif pm.type == 'cod' %}{{ 'checkout.cod'|t }}{% endif %}
       </p>
       <form method="post" class="inline" style="margin-top:.4rem"><input type="hidden" name="csrf_token" value="{{ csrf }}"><input type="hidden" name="action" value="default"><input type="hidden" name="pmid" value="{{ pm.id }}">
-        {% if not pm.is_default %}<button class="btn small ghost">Set default</button>{% endif %}
+        {% if not pm.is_default %}<button class="btn small ghost">{{ 'user_payment.set_default'|t }}</button>{% endif %}
       </form>
-      <form method="post" class="inline" onsubmit="return confirm('Remove this payment method?')"><input type="hidden" name="csrf_token" value="{{ csrf }}"><input type="hidden" name="action" value="delete"><input type="hidden" name="pmid" value="{{ pm.id }}">
-        <button class="btn small danger" style="margin-left:.4rem">Remove</button>
+      <form method="post" class="inline" onsubmit="return confirm('{{ 'user_payment.remove_confirm'|t }}')"><input type="hidden" name="csrf_token" value="{{ csrf }}"><input type="hidden" name="action" value="delete"><input type="hidden" name="pmid" value="{{ pm.id }}">
+        <button class="btn small danger" style="margin-left:.4rem">{{ 'user_payment.remove'|t }}</button>
       </form>
     </div>
     {% else %}
-    <p class="muted">No payment methods saved yet.</p>
+    <p class="muted">{{ 'user_payment.none_saved'|t }}</p>
     {% endfor %}
     {% else %}
-    <p class="muted">No payment methods saved yet.</p>
+    <p class="muted">{{ 'user_payment.none_saved'|t }}</p>
     {% endif %}
   </div>
 </div>

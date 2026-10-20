@@ -1,31 +1,31 @@
 {% extends "base.html" %}
 {% block content %}
-<h1>Shop</h1>
+<h1>{{ 'shop.title'|t }}</h1>
 <section class="shoptools">
   <form method="get" class="filterbar">
-    <input name="q" value="{{ q }}" placeholder="Search products...">
+    <input name="q" value="{{ q }}" placeholder="{{ 'shop.search_placeholder'|t }}">
     <div class="catbar">
-      <a class="cat {{ 'active' if not cat }}" href="/shop"><span class="icon">🌐</span>All</a>
+      <a class="cat {{ 'active' if not cat }}" href="/shop"><span class="icon">🌐</span>{{ 'index.all'|t }}</a>
       {% for c in categories %}<a class="cat {{ 'active' if cat == c.id }}" href="/shop?cat={{ c.id }}"><span class="icon">{{ c.icon }}</span>{{ c.name }}</a>{% endfor %}
     </div>
     <div class="pricebar">
       <div class="pricefield">
         <input id="min_price" name="min_price" value="{{ min_price }}" placeholder="Min">
-        <span class="pill">{{ site.get('currency','SSP') }}</span>
+        <span class="pill">{{ currency_symbol }}</span>
       </div>
       <div class="pricefield">
         <input id="max_price" name="max_price" value="{{ max_price }}" placeholder="Max">
-        <span class="pill">{{ site.get('currency','SSP') }}</span>
+        <span class="pill">{{ currency_symbol }}</span>
       </div>
     </div>
-    <select name="sort" id="sort" aria-label="Sort products">
-      <option value="">Sort</option>
-      <option value="low" {{ 'selected' if sort == 'low' }}>Lowest</option>
-      <option value="high" {{ 'selected' if sort == 'high' }}>Highest</option>
-      <option value="name" {{ 'selected' if sort == 'name' }}>Name</option>
+    <select name="sort" id="sort" aria-label="{{ 'shop.sort'|t }}">
+      <option value="">{{ 'shop.sort'|t }}</option>
+      <option value="low" {{ 'selected' if sort == 'low' }}>{{ 'shop.sort_low'|t }}</option>
+      <option value="high" {{ 'selected' if sort == 'high' }}>{{ 'shop.sort_high'|t }}</option>
+      <option value="name" {{ 'selected' if sort == 'name' }}>{{ 'shop.sort_name'|t }}</option>
     </select>
-    <button type="submit" class="btn">Go</button>
+    <button type="submit" class="btn">{{ 'shop.go'|t }}</button>
   </form>
 </section>
-<div class="grid">{% for p in products %}{% include "card.html" %}{% else %}<p>No products found.</p>{% endfor %}</div>
+<div class="grid">{% for p in products %}{% include "card.html" %}{% else %}<p>{{ 'shop.no_products'|t }}</p>{% endfor %}</div>
 {% endblock %}
