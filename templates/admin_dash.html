@@ -1,7 +1,25 @@
 {% extends "admin_base.html" %}
+{% set admin_title = "Dashboard" %}
+{% set admin_subtitle = "Store overview and key metrics" %}
+{% block admin_actions %}
+  <a class="btn small" href="/admin/products">Manage products</a>
+{% endblock %}
 {% block admin %}
-<h1>Dashboard</h1>
-<div class="stats">
+<div class="adm-paneled">
+  <nav class="adm-pane" aria-label="Dashboard">
+    <h3>Overview</h3>
+    <ul>
+      <li><a class="active" href="/admin">📊 Dashboard</a></li>
+      <li><a href="/admin/products">📦 Products</a></li>
+      <li><a href="/admin/orders">🧾 Orders</a></li>
+      <li><a href="/admin/payments">💳 Payments</a></li>
+      <li><a href="/admin/messages">✉️ Messages</a></li>
+      <li><a href="/admin/applications">📋 Applications</a></li>
+      <li><a href="/admin/listings">🏪 Marketplace</a></li>
+    </ul>
+  </nav>
+  <div class="adm-pane-body">
+    <div class="stats">
   <div class="card stat"><b>{{ n_orders }}</b><span>Orders</span></div>
   <div class="card stat warn"><b>{{ pending }}</b><span>Pending</span></div>
   <div class="card stat ok"><b>{{ "{:,.0f}".format(rev) }}</b><span>Revenue ({{ site.get('currency','SSP') }})</span></div>
@@ -17,8 +35,12 @@
   <a class="btn small" href="/admin/applications">Review applications</a>
   <a class="btn small" href="/admin/listings">Marketplace listings</a>
 </div>
-<h2>Recent orders</h2>
-<table class="tbl"><tr><th>#</th><th>Customer</th><th>Total</th><th>Status</th><th>When</th></tr>
+<div class="admcard">
+  <div class="admsection-title">Recent orders</div>
+  <table class="tbl"><tr><th>#</th><th>Customer</th><th>Total</th><th>Status</th><th>When</th></tr>
 {% for o in recent %}<tr><td>{{ o["id"] }}</td><td>{{ o["customer_name"] }}</td><td>{{ o["total"] }}</td><td><span class="pill">{{ o["status"] }}</span></td><td class="muted">{{ o["created"][:16] }}</td></tr>
 {% else %}<tr><td colspan="5" class="muted">No orders yet.</td></tr>{% endfor %}</table>
+    </div>
+  </div>
+</div>
 {% endblock %}

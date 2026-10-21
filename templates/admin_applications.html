@@ -1,10 +1,20 @@
 {% extends "admin_base.html" %}
+{% set admin_title = "Applications" %}
+{% set admin_subtitle = "Job applications submitted from the Jobs pages. Open a card to read the message, view the uploaded document, change status or delete." %}
 {% block admin %}
-<h1>Applications ({{ apps|length }})</h1>
-<p class="muted">Job applications submitted from the Jobs pages. Open a card to read the message, view the uploaded document, change status or delete.</p>
-{% set statcls = {'new':'', 'reviewing':'warn', 'shortlisted':'ok', 'hired':'ok', 'rejected':'bad'} %}
-{% for a in apps %}
-<details class="card prodrow">
+<div class="adm-paneled">
+  <nav class="adm-pane" aria-label="Applications">
+    <h3>Applications</h3>
+    <ul>
+      <li><a class="active" href="/admin/applications">📋 All applications</a></li>
+    </ul>
+  </nav>
+  <div class="adm-pane-body">
+    <div class="admcard">
+      <h3>Applications ({{ apps|length }})</h3>
+      {% set statcls = {'new':'', 'reviewing':'warn', 'shortlisted':'ok', 'hired':'ok', 'rejected':'bad'} %}
+      {% for a in apps %}
+      <details class="card prodrow">
   <summary>
     <span class="pill {{ statcls.get(a.status, '') }}">{{ a.status }}</span>
     <b>{{ a.name }}</b> — {{ a.job }}
@@ -38,4 +48,7 @@
 {% else %}
 <p class="muted">No applications yet. They will appear here when someone taps <b>Apply now</b> on a job.</p>
 {% endfor %}
+    </div>
+  </div>
+</div>
 {% endblock %}

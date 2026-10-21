@@ -1,9 +1,14 @@
-{% extends "admin_base.html" %}{% block admin %}
-<h1>💳 Payments Ledger</h1>
-<p class="muted">Marketplace advertisement fee payments from sellers. Verify or reject pending payments.</p>
-
-<div class="card">
-  <h3>Record a Payment</h3>
+{% extends "admin_base.html" %}{% set admin_title = "Payments" %}{% set admin_subtitle = "Marketplace advertisement fee payments from sellers. Verify or reject pending payments." %}{% block admin %}
+<div class="adm-paneled">
+  <nav class="adm-pane" aria-label="Payments">
+    <h3>Payments</h3>
+    <ul>
+      <li><a class="active" href="/admin/payments">💳 Payment ledger</a></li>
+    </ul>
+  </nav>
+  <div class="adm-pane-body">
+    <div class="admcard">
+      <h3>Record a Payment</h3>
   <form method="post" enctype="multipart/form-data"><input type="hidden" name="csrf_token" value="{{ csrf }}">
     <input type="hidden" name="action" value="record">
     <label>Seller (username) <input name="user_id" placeholder="username" required></label>
@@ -52,4 +57,6 @@
   <tr><td colspan="10" class="muted">No payments recorded yet.</td></tr>
   {% endfor %}
 </table>
+    </div>
+  </div>
 {% endblock %}

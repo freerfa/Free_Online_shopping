@@ -1,15 +1,29 @@
 {% extends "admin_base.html" %}
+{% set admin_title = "Users" %}
+{% set admin_subtitle = "Customer accounts registered on the store. Grant the seller right to let an account post products in the marketplace. Use Access rights to change an account's status and the features it may use. Removing a user here does not delete their orders." %}
+{% block admin_actions %}
+  <a class="btn" href="/admin/users?action=invite">Invite user</a>
+{% endblock %}
 {% block admin %}
-<h1>Users ({{ users|length }})</h1>
-<p class="muted">Customer accounts registered on the store. Grant the <b>seller right</b> to let an account post products in the marketplace. Removing a user here does not delete their orders.</p>
-<table class="tbl"><tr><th>Username</th><th>Email</th><th>Joined</th><th>Seller access</th><th></th></tr>
+<div class="adm-paneled">
+  <nav class="adm-pane" aria-label="Users">
+    <h3>Accounts</h3>
+    <ul>
+      <li><a class="active" href="/admin/users">👥 All users</a></li>
+    </ul>
+  </nav>
+  <div class="adm-pane-body">
+    <div class="admcard">
+      <table class="tbl"><tr><th>Username</th><th>Email</th><th>Joined</th><th>Seller access</th><th>Status</th><th>Access rights</th><th></th></tr>
 {% for u in users %}
+{% set perms = u.get('perms') or {} %}
+{% set st = u.get('status') or 'active' %}
 <tr><td><b>{{ u.username }}</b></td><td>{{ u.email or '—' }}</td><td class="muted">{{ (u.created or '')[:16] }}</td>
 <td>
   {% if u.can_sell %}<span class="pill ok">granted</span>
   {% elif u.sell_request == 'pending' %}<span class="pill warn">requested</span>
   {% else %}<span class="muted">—</span>{% endif %}
-  <form method="post" class="inline">
+  <form method="post" class="inline" style="margin-top:.4rem">
     <input type="hidden" name="csrf_token" value="{{ csrf }}">
     <input type="hidden" name="username" value="{{ u.username }}">
     {% if u.can_sell %}
@@ -19,6 +33,44 @@
     {% endif %}
   </form>
 </td>
+<td>
+  <form method="post" class="inline" style="margin-top:.4rem">
+    <input type="hidden" name="csrf_token" value="{{ csrf }}">
+    <input type="hidden" name="action" value="status">
+    <input type="hidden" name="username" value="{{ u.username }}">
+    <select name="status" onchange="this.form.submit()" aria-label="Status for {{ u.username }}">
+      {% for s in statuses %}
+      <option value="{{ s }}" {{ 'selected' if st == s }}>{{ s }}</option>
+      {% endfor %}
+    </select>
+  </form>
+  {% if st != 'active' %}<span class="pill {{ 'bad' if st == 'blocked' else 'warn' }}">{{ st }}</span>{% endif %}
+</td>
+<td class="rights">
+  <details class="formsection">
+    <summary class="muted">Manage rights ({{ perm_labels|length }} total)</summary>
+    <form method="post">
+      <input type="hidden" name="csrf_token" value="{{ csrf }}">
+      <input type="hidden" name="action" value="perms">
+      <input type="hidden" name="username" value="{{ u.username }}">
+      {% for key, label in perm_labels.items() %}
+      <label class="inline"><input type="checkbox" name="{{ key }}" value="1" {{ 'checked' if perms.get(key, true) }}> {{ label }}</label><br>
+      {% endfor %}
+      <div class="btnrow">
+        <button class="btn small">Save rights</button>
+      </div>
+    </form>
+    <form method="post" style="margin-top:.5rem">
+      <input type="hidden" name="csrf_token" value="{{ csrf }}">
+      <input type="hidden" name="action" value="reset_perms">
+      <input type="hidden" name="username" value="{{ u.username }}">
+      <button class="btn small ghost">Reset to default</button>
+    </form>
+  </details>
+</td>
 <td><form method="post" onsubmit="return confirm('Remove {{ u.username }}?')"><input type="hidden" name="csrf_token" value="{{ csrf }}"><input type="hidden" name="action" value="delete"><input type="hidden" name="username" value="{{ u.username }}"><button class="btn small danger">Remove</button></form></td></tr>
-{% else %}<tr><td colspan="5" class="muted">No users yet.</td></tr>{% endfor %}</table>
+{% else %}<tr><td colspan="7" class="muted">No users yet.</td></tr>{% endfor %}</table>
+    </div>
+  </div>
+</div>
 {% endblock %}

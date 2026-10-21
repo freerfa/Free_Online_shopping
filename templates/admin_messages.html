@@ -1,8 +1,19 @@
 {% extends "admin_base.html" %}
+{% set admin_title = "Messages" %}
+{% set admin_subtitle = "Customer messages sent through the contact form. Reply via email or delete." %}
 {% block admin %}
-<h1>Messages ({{ msgs|length }})</h1>
-{% for m in msgs %}
-<div class="card msgrow">
+<div class="adm-paneled">
+  <nav class="adm-pane" aria-label="Messages">
+    <h3>Messages</h3>
+    <ul>
+      <li><a class="active" href="/admin/messages">✉️ All messages</a></li>
+    </ul>
+  </nav>
+  <div class="adm-pane-body">
+    <div class="admcard">
+      <h3>Messages ({{ msgs|length }})</h3>
+      {% for m in msgs %}
+      <div class="card msgrow">
   <b>{{ m["name"] }}</b> <span class="muted">&lt;{{ m["email"] }}&gt; · {{ (m["created"] or '')[:16] }}</span>
   <h3>{{ m["subject"] or '(no subject)' }}</h3>
   <p>{{ m["message"] }}</p>
@@ -10,4 +21,7 @@
   <form method="post" onsubmit="return confirm('Delete this message?')"><input type="hidden" name="csrf_token" value="{{ csrf }}"><input type="hidden" name="mid" value="{{ m["id"] }}"><button class="btn small danger">Delete</button></form></div>
 </div>
 {% else %}<p class="muted">No messages yet.</p>{% endfor %}
+    </div>
+  </div>
+</div>
 {% endblock %}

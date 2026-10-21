@@ -1,7 +1,18 @@
 {% extends "admin_base.html" %}
+{% set admin_title = "Review Listing" %}
+{% set admin_subtitle = "Review product: {{ p.name }}" %}
 {% block admin %}
-<p><a href="/admin/listings">← Back to marketplace listings</a></p>
-<h1>🔍 Review: {{ p.name }}</h1>
+<div class="adm-paneled">
+  <nav class="adm-pane" aria-label="Review">
+    <h3>Review</h3>
+    <ul>
+      <li><a class="active" href="/admin/listings/review/{{ p.id }}">🔍 Review listing</a></li>
+      <li><a href="/admin/listings">🏪 Back to listings</a></li>
+    </ul>
+  </nav>
+  <div class="adm-pane-body">
+    <div class="admcard">
+      <h3>🔍 Review: {{ p.name }}</h3>
 <p>
   <span class="pill {{ 'ok' if p.status == 'approved' else ('bad' if p.status == 'rejected' else 'warn') }}">{{ p.status }}</span>
   <span class="pill {{ 'ok' if p.fee_status == 'paid' else 'bad' }}">fee {{ p.get('fee_amount', 0) }} {{ p.fee_status }}</span>
@@ -63,6 +74,9 @@
         </form>
         {% endif %}
       </div>
+    </div>
+  </div>
+</div>
     </div>
   </div>
 </div>

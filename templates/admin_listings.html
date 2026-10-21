@@ -1,7 +1,17 @@
 {% extends "admin_base.html" %}
+{% set admin_title = "Marketplace Listings" %}
+{% set admin_subtitle = "Products posted by shoppers. Review each post, collect the advertisement fee (mobile money / cash), then approve to publish it in the shop." %}
 {% block admin %}
-<h1>Marketplace listings ({{ listings|length }})</h1>
-<p class="muted">Products posted by shoppers. Review each post, collect the advertisement fee (mobile money / cash), then approve to publish it in the shop.</p>
+<div class="adm-paneled">
+  <nav class="adm-pane" aria-label="Listings">
+    <h3>Listings</h3>
+    <ul>
+      <li><a class="active" href="/admin/listings">🏪 All listings</a></li>
+    </ul>
+  </nav>
+  <div class="adm-pane-body">
+    <div class="admcard">
+      <h3>Marketplace listings ({{ listings|length }})</h3>
 {% set reqs = users|selectattr('sell_request', 'equalto', 'pending')|rejectattr('can_sell', 'defined')|list %}
 {% if reqs %}
 <details class="card addbox" open>
@@ -83,4 +93,7 @@
 {% else %}
 <p class="muted">No user posts yet. They appear here when a shopper submits a product for review.</p>
 {% endfor %}
+    </div>
+  </div>
+</div>
 {% endblock %}

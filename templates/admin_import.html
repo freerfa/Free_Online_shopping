@@ -1,9 +1,23 @@
 {% extends "admin_base.html" %}
+{% set admin_title = "Import / Export" %}
+{% set admin_subtitle = "Backup and restore your site content as JSON. Export settings, products, categories, testimonials, and partners." %}
 {% block admin %}
-<h1>Import / Export</h1>
-<div class="cardgrid2">
-  <div class="card"><h3>💾 Export</h3><p class="muted">Download the full site content as JSON (site settings, products, categories, testimonials, partners).</p><a class="btn" href="{{ url_for('admin_export') }}">Download JSON</a></div>
-  <div class="card"><h3>📥 Import</h3><p class="muted">Paste exported JSON to restore or bulk-edit content. Protected keys (<b>admin_users</b>, <b>users</b>, <b>admin_account</b>) are never overwritten.</p></div>
+<div class="adm-paneled">
+  <nav class="adm-pane" aria-label="Import/Export">
+    <h3>Content</h3>
+    <ul>
+      <li><a class="active" href="/admin/import">💾 Import / Export</a></li>
+    </ul>
+  </nav>
+  <div class="adm-pane-body">
+    <div class="admcard">
+      <h3>Import / Export</h3>
+      <div class="cardgrid2">
+        <div class="card"><h3>💾 Export</h3><p class="muted">Download the full site content as JSON (site settings, products, categories, testimonials, partners).</p><a class="btn" href="{{ url_for('admin_export') }}">Download JSON</a></div>
+        <div class="card"><h3>📥 Import</h3><p class="muted">Paste exported JSON to restore or bulk-edit content. Protected keys (<b>admin_users</b>, <b>users</b>, <b>admin_account</b>) are never overwritten.</p></div>
+      </div>
+      <form method="post"><input type="hidden" name="csrf_token" value="{{ csrf }}"><textarea name="json_data" rows="16" placeholder='{"site": {"name": "..."}, "products": [...]}'></textarea><br><button class="btn">Import content</button></form>
+    </div>
+  </div>
 </div>
-<form method="post"><input type="hidden" name="csrf_token" value="{{ csrf }}"><textarea name="json_data" rows="16" placeholder='{"site": {"name": "..."}, "products": [...]}'></textarea><br><button class="btn">Import content</button></form>
 {% endblock %}
