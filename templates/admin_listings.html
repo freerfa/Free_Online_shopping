@@ -73,6 +73,8 @@
           <span class="muted small">by {{ p.seller }} · {{ (p.created or '')[:10] }}</span>
           <span class="strong num">{{ site.get('currency','SSP') }} {{ p.price }}</span>
           <span class="adm-badge {{ 'ok' if p.status == 'approved' else ('bad' if p.status == 'rejected' else 'warn') }}"><span class="dot"></span>{{ p.status }}</span>
+          <span class="adm-badge {{ 'ok' if p.fee_status == 'paid' else 'bad' }}"><span class="dot"></span>fee {{ p.fee_status }}</span>
+          {% if p.expires_at %}<span class="adm-badge {{ 'bad' if p.expires_at < now_iso else 'ok' }}"><span class="dot"></span>{{ p.expires_at[:10] }}</span>{% endif %}
           <span class="adm-badge {{ 'ok' if p.fee_status == 'paid' else 'bad' }}">fee {{ p.get('fee_amount', 0) }} {{ p.fee_status }}</span>
         </summary>
         <div class="adm-record-body">

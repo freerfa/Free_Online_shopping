@@ -69,6 +69,24 @@
         <div class="btnrow"><button class="btn small">{{ 'myproducts.save_resubmit'|t }}</button></div>
       </form>
       {% else %}<p class="muted">{{ 'myproducts.live'|t }}</p>{% endif %}
+      {% if p.status == 'approved' and p.fee_status != 'paid' and advertise_perm and pay_enabled %}
+      <form method="post" style="margin-top:.5rem">
+        <input type="hidden" name="csrf_token" value="{{ csrf }}">
+        <input type="hidden" name="action" value="pay_ad">
+        <input type="hidden" name="pid" value="{{ p.id }}">
+        <label style="display:inline-block;margin-right:.5rem">{{ 'myproducts.duration'|t }}
+          <select name="duration" style="width:auto">
+            <option value="monthly">{{ 'myproducts.monthly'|t }}</option>
+            <option value="annual">{{ 'myproducts.annual'|t }}</option>
+            <option value="permanent">{{ 'myproducts.permanent'|t }}</option>
+          </select>
+        </label>
+        <button class="btn small">{{ 'myproducts.pay_ad_fee'|t(fee=fee) }}</button>
+      </form>
+      {% endif %}
+      {% if p.fee_status == 'paid' %}
+      <p class="muted small">{{ 'myproducts.expires'|t }}: {% if p.expires_at %}{{ p.expires_at[:10] }} ({{ p.post_duration }}){% else %}{{ 'myproducts.permanent'|t }}{% endif %}</p>
+      {% endif %}
       <form method="post" onsubmit="return confirm('{{ 'myproducts.delete_confirm'|t }}')">
         <input type="hidden" name="csrf_token" value="{{ csrf }}">
         <input type="hidden" name="action" value="delete">

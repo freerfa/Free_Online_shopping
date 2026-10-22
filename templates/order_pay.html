@@ -17,7 +17,7 @@
     <form method="post" enctype="multipart/form-data"><input type="hidden" name="csrf_token" value="{{ csrf }}">
       <input type="hidden" name="action" value="pay">
       <label>{{ 'order_pay.payment_method'|t }}
-        <select name="payment_method" required>
+        <select name="payment_method" multiple required>
           {% for code, name in types %}<option value="{{ code }}">{{ ('order_pay.pm_' ~ code)|t }}</option>{% endfor %}
         </select>
       </label>

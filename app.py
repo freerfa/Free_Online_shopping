@@ -6,7 +6,7 @@ Free Online Shopping — Flask + SQLite (JSON-blob CMS) + Jinja2
 * Render persistent disk: set DATA_DIR=/opt/render/project/src/data
 """
 import os, json, sqlite3, secrets, re, html
-from datetime import datetime
+from datetime import datetime, timedelta
 from functools import wraps
 from io import BytesIO
 import urllib.request
@@ -179,8 +179,47 @@ def is_admin():
 
 def visible_products():
     """Public catalog: admin products + approved marketplace posts."""
-    return [p for p in get_blob("products", [])
-            if p.get("post_type") != "user" or p.get("status") == "approved"]
+    now = datetime.utcnow()
+    out = []
+    for p in get_blob("products", []):
+        if p.get("post_type") == "user" and p.get("status") != "approved":
+            continue
+        if p.get("post_type") == "user":
+            exp = p.get("expires_at")
+            if exp:
+                try:
+                    if datetime.fromisoformat(exp) < now:
+                        continue
+                except ValueError:
+                    pass
+        out.append(p)
+    return out
+
+def is_expired(p):
+    """Whether a marketplace post has expired."""
+    exp = (p or {}).get("expires_at")
+    if not exp:
+        return False
+    try:
+        return datetime.fromisoformat(exp) < datetime.utcnow()
+    except ValueError:
+        return False
+
+def expiry_label(p):
+    """Human-readable expiry status for a post."""
+    exp = (p or {}).get("expires_at")
+    if not exp:
+        return "no expiry"
+    try:
+        dt = datetime.fromisoformat(exp)
+        if dt < datetime.utcnow():
+            return "expired"
+        delta = (dt - datetime.utcnow()).days
+        if delta <= 7:
+            return f"expires in {delta}d"
+        return f"expires {dt.date().isoformat()}"
+    except ValueError:
+        return "no expiry"
 
 def ad_fee():
     return int(get_blob("fees", {}).get("per_post", 5000))
@@ -206,6 +245,7 @@ ACCESS_PERMS = {
     "payment": "Manage payment methods and pay for orders",
     "apply": "Submit job applications",
     "contact": "Send messages through the contact form",
+    "advertise": "Pay for advertising your own products",
 }
 DEFAULT_PERMS = {k: True for k in ACCESS_PERMS}
 
@@ -860,7 +900,7 @@ def order_pay(oid):
     if request.method == "POST":
         act = request.form.get("action", "pay")
         if act == "pay":
-            pmethod = request.form.get("payment_method", "").strip()
+            pmethod = ",".join(request.form.getlist("payment_method"))
             pref = request.form.get("payment_reference", "").strip()
             receipt = request.files.get("receipt")
             rpath = None
@@ -1085,6 +1125,35 @@ def myproducts():
             set_blob("users", users)
             flash("Seller access requested! The admin will review it — you can post once granted. ✋", "success")
             return redirect(url_for("myproducts"))
+        if act == "pay_ad":
+            if not has_perm("advertise"):
+                flash("You are not allowed to pay for advertising right now. Contact the admin.", "danger")
+                return redirect(url_for("myproducts"))
+            if not payment_enabled():
+                flash("The payment system is currently disabled.", "warning")
+                return redirect(url_for("myproducts"))
+            pid = int(request.form.get("pid", 0))
+            duration = request.form.get("duration", "monthly")
+            if duration not in ("monthly", "annual", "permanent"):
+                duration = "monthly"
+            products = get_blob("products", [])
+            for p in products:
+                if p.get("id") == pid and p.get("seller") == me and p.get("status") == "approved" and p.get("fee_status") != "paid":
+                    p["fee_status"] = "paid"
+                    p["paid_at"] = datetime.utcnow().isoformat()
+                    p["paid_by"] = me
+                    p["post_duration"] = duration
+                    if duration == "monthly":
+                        p["expires_at"] = (datetime.utcnow() + timedelta(days=30)).isoformat()
+                    elif duration == "annual":
+                        p["expires_at"] = (datetime.utcnow() + timedelta(days=365)).isoformat()
+                    else:
+                        p["expires_at"] = None  # permanent
+                    set_blob("products", products)
+                    flash(f"Advertisement fee paid for “{p['name']}”! 🎉", "success")
+                    return redirect(url_for("myproducts"))
+            flash("Nothing to pay for.", "info")
+            return redirect(url_for("myproducts"))
         if act in ("add", "edit", "delete") and not can_sell():
             flash("You need seller access to manage posts. Request it below.", "danger")
             return redirect(url_for("myproducts"))
@@ -1157,7 +1226,8 @@ def myproducts():
     return render_template("myproducts.html", mine=mine, fee=fee,
                            categories=get_blob("categories", []),
                            seller=can_sell(), request_status=rec.get("sell_request", ""),
-                           my_perms=user_perms(rec), my_status=user_status(rec))
+                           my_perms=user_perms(rec), my_status=user_status(rec),
+                           advertise_perm=has_perm("advertise"), pay_enabled=payment_enabled())
 
 @app.route("/uploads/<path:fname>")
 def uploads(fname):
@@ -1363,7 +1433,7 @@ def admin_listings():
         return redirect(url_for("admin_listings"))
     listings = [p for p in products if p.get("post_type") == "user"]
     return render_template("admin_listings.html", listings=listings, fee=ad_fee(),
-                           users=get_blob("users", []))
+                           users=get_blob("users", []), now_iso=datetime.utcnow().isoformat())
 
 @app.route("/admin/listings/review/<int:pid>", methods=["GET", "POST"])
 @admin_required
