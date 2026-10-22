@@ -1,56 +1,178 @@
-{% extends "base.html" %}
-{% block content %}
-<div class="adm">
-  <aside class="admnav card" aria-label="Admin navigation">
-    <div class="adm-brand">
-      <span class="adm-mark">⚙️</span>
-      <div>
-        <div class="adm-title">Admin panel</div>
-        <div class="adm-user">{{ user.username }}</div>
+<!DOCTYPE html>
+<html lang="{{ language or 'en' }}" dir="{{ lang_dir or 'ltr' }}" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<title>{% block title %}Admin{% endblock %} · {{ site.get('name','Free Online Shopping') }}</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='admin.css') }}">
+<script>
+  // Set the theme before first paint to avoid a flash of the wrong theme.
+  try {
+    var t = localStorage.getItem("theme");
+    if (t === "dark" || t === "light") document.documentElement.setAttribute("data-theme", t);
+  } catch (e) {}
+</script>
+</head>
+<body class="adm-body">
+{% from "_icons.html" import icon %}
+<div class="adm-app">
+
+  <div class="adm-shell">
+
+    <!-- ===================== Sidebar ===================== -->
+    <aside class="adm-side" id="admSidebar" aria-label="Admin navigation">
+      <div class="adm-brand">
+        <span class="adm-brand-mark">{{ icon('storefront', 'md') }}</span>
+        <div class="adm-brand-text">
+          <div class="adm-brand-name">{{ site.get('name','Free Online Shopping') }}</div>
+          <div class="adm-brand-sub">Admin panel</div>
+        </div>
+      </div>
+
+      <nav class="adm-nav">
+        <div class="adm-nav-group">Overview</div>
+        <a class="adm-nav-link {{ 'active' if request.path == '/' }}" href="{{ url_for('index') }}">
+          {{ icon('storefront', 'sm') }}<span class="label">Home / Storefront</span>
+        </a>
+        <a class="adm-nav-link {{ 'active' if request.path == '/admin' }}" href="{{ url_for('admin_dash') }}">
+          {{ icon('dashboard', 'sm') }}<span class="label">Dashboard</span>
+        </a>
+
+        <div class="adm-nav-group">Store</div>
+        <a class="adm-nav-link {{ 'active' if request.path.startswith('/admin/products') }}" href="{{ url_for('admin_products') }}">
+          {{ icon('box', 'sm') }}<span class="label">Products</span>
+        </a>
+        <a class="adm-nav-link {{ 'active' if request.path.startswith('/admin/listings') }}" href="{{ url_for('admin_listings') }}">
+          {{ icon('store', 'sm') }}<span class="label">Marketplace</span>
+          {% if n_pend %}<span class="adm-count">{{ n_pend }}</span>{% endif %}
+        </a>
+        <a class="adm-nav-link {{ 'active' if request.path.startswith('/admin/orders') }}" href="{{ url_for('admin_orders') }}">
+          {{ icon('receipt', 'sm') }}<span class="label">Orders</span>
+        </a>
+        <a class="adm-nav-link {{ 'active' if request.path.startswith('/admin/payments') }}" href="{{ url_for('admin_payments') }}">
+          {{ icon('card', 'sm') }}<span class="label">Payments</span>
+        </a>
+
+        <div class="adm-nav-group">People</div>
+        <a class="adm-nav-link {{ 'active' if request.path.startswith('/admin/applications') }}" href="{{ url_for('admin_applications') }}">
+          {{ icon('clipboard', 'sm') }}<span class="label">Applications</span>
+          {% if n_apps %}<span class="adm-count">{{ n_apps }}</span>{% endif %}
+        </a>
+        <a class="adm-nav-link {{ 'active' if request.path.startswith('/admin/users') }}" href="{{ url_for('admin_users') }}">
+          {{ icon('users', 'sm') }}<span class="label">Users</span>
+          {% if n_sellreq %}<span class="adm-count">{{ n_sellreq }}</span>{% endif %}
+        </a>
+        <a class="adm-nav-link {{ 'active' if request.path.startswith('/admin/account') }}" href="{{ url_for('admin_account') }}">
+          {{ icon('shield', 'sm') }}<span class="label">Admin accounts</span>
+        </a>
+
+        <div class="adm-nav-group">Site</div>
+        <a class="adm-nav-link {{ 'active' if request.path.startswith('/admin/content') }}" href="{{ url_for('admin_content') }}">
+          {{ icon('palette', 'sm') }}<span class="label">Site content</span>
+        </a>
+        <a class="adm-nav-link {{ 'active' if request.path.startswith('/admin/settings/payments') }}" href="{{ url_for('admin_payment_toggle') }}">
+          {{ icon('wallet', 'sm') }}<span class="label">Payment settings</span>
+        </a>
+        <a class="adm-nav-link {{ 'active' if request.path.startswith('/admin/messages') }}" href="{{ url_for('admin_messages') }}">
+          {{ icon('inbox', 'sm') }}<span class="label">Messages</span>
+        </a>
+        <a class="adm-nav-link {{ 'active' if request.path.startswith('/admin/import') }}" href="{{ url_for('admin_import') }}">
+          {{ icon('download', 'sm') }}<span class="label">Import / Export</span>
+        </a>
+      </nav>
+
+      <div class="adm-side-foot">
+        <div class="adm-side-user">
+          <span class="adm-avatar">{{ (user.username if user else '?')[0] }}</span>
+          <div class="grow" style="min-width:0">
+            <div class="name truncate">{{ user.username if user else 'Guest' }}</div>
+            <div class="role">Administrator</div>
+          </div>
+        </div>
+        <a class="adm-side-link" href="{{ url_for('index') }}">{{ icon('external', 'sm') }} Back to store</a>
+        <a class="adm-side-link" href="{{ url_for('logout') }}">{{ icon('logout', 'sm') }} Sign out</a>
+      </div>
+    </aside>
+
+    <!-- ===================== Main ===================== -->
+    <div class="adm-main">
+      <header class="adm-top">
+        <div class="adm-top-title">
+          <span class="t">{{ admin_title if admin_title else 'Admin' }}</span>
+          {% if admin_subtitle %}<span class="s truncate">{{ admin_subtitle }}</span>{% endif %}
+        </div>
+
+        <button class="adm-search" type="button" data-palette-open aria-label="Open command palette">
+          {{ icon('grid', 'sm') }}<span class="grow">Search or jump to…</span><kbd>⌘K</kbd>
+        </button>
+
+        <a class="adm-icon-btn" href="{{ url_for('index') }}" title="View storefront" aria-label="View storefront">
+          {{ icon('external', 'sm') }} <span style="font-size:.75rem;font-weight:600;margin-left:4px;">Store</span>
+        </a>
+
+        <button class="adm-icon-btn" type="button" data-theme-toggle aria-label="Switch theme">
+          <span data-icon="moon">{{ icon('moon', 'sm') }}</span>
+          <span data-icon="sun" class="hidden">{{ icon('sun', 'sm') }}</span>
+        </button>
+      </header>
+
+      <main class="adm-content">
+        {% if admin_title %}
+        <div class="adm-page-head">
+          <div class="info">
+            <h1>{{ admin_title }}</h1>
+            {% if admin_subtitle %}<p class="sub">{{ admin_subtitle }}</p>{% endif %}
+          </div>
+          <div class="actions">{% block admin_actions %}{% endblock %}</div>
+        </div>
+        {% endif %}
+
+        {% block admin %}{% endblock %}
+      </main>
+    </div>
+
+  </div><!-- /.adm-shell -->
+
+  <!-- ===================== Command palette ===================== -->
+  <div class="adm-palette" role="dialog" aria-modal="true" aria-label="Command palette">
+    <div class="adm-palette-box">
+      <input class="adm-palette-input" type="search" placeholder="Search pages and actions…" aria-label="Search">
+      <div class="adm-palette-list">
+        <a class="adm-palette-item" href="{{ url_for('admin_dash') }}" data-palette-item="dashboard overview home">{{ icon('dashboard', 'sm') }}<span>Dashboard</span><span class="group">Overview</span></a>
+        <a class="adm-palette-item" href="{{ url_for('admin_products') }}" data-palette-item="products catalog add item">{{ icon('box', 'sm') }}<span>Products</span><span class="group">Store</span></a>
+        <a class="adm-palette-item" href="{{ url_for('admin_listings') }}" data-palette-item="listings marketplace seller posts review">{{ icon('store', 'sm') }}<span>Marketplace listings</span><span class="group">Store</span></a>
+        <a class="adm-palette-item" href="{{ url_for('admin_orders') }}" data-palette-item="orders fulfilment shipping">{{ icon('receipt', 'sm') }}<span>Orders</span><span class="group">Store</span></a>
+        <a class="adm-palette-item" href="{{ url_for('admin_payments') }}" data-palette-item="payments ledger fees">{{ icon('card', 'sm') }}<span>Payments</span><span class="group">Store</span></a>
+        <a class="adm-palette-item" href="{{ url_for('admin_applications') }}" data-palette-item="applications jobs hiring">{{ icon('clipboard', 'sm') }}<span>Applications</span><span class="group">People</span></a>
+        <a class="adm-palette-item" href="{{ url_for('admin_users') }}" data-palette-item="users accounts customers permissions rights">{{ icon('users', 'sm') }}<span>Users</span><span class="group">People</span></a>
+        <a class="adm-palette-item" href="{{ url_for('admin_account') }}" data-palette-item="admin accounts password email sign in">{{ icon('shield', 'sm') }}<span>Admin accounts</span><span class="group">People</span></a>
+        <a class="adm-palette-item" href="{{ url_for('admin_content') }}" data-palette-item="content site copy hero about contact footer">{{ icon('palette', 'sm') }}<span>Site content</span><span class="group">Site</span></a>
+        <a class="adm-palette-item" href="{{ url_for('admin_payment_toggle') }}" data-palette-item="payment settings toggle enable disable cod">{{ icon('wallet', 'sm') }}<span>Payment settings</span><span class="group">Site</span></a>
+        <a class="adm-palette-item" href="{{ url_for('admin_messages') }}" data-palette-item="messages inbox contact support">{{ icon('inbox', 'sm') }}<span>Messages</span><span class="group">Site</span></a>
+        <a class="adm-palette-item" href="{{ url_for('admin_import') }}" data-palette-item="import export backup restore json">{{ icon('download', 'sm') }}<span>Import / Export</span><span class="group">Site</span></a>
+        <a class="adm-palette-item" href="{{ url_for('index') }}" data-palette-item="storefront view shop public">{{ icon('external', 'sm') }}<span>View storefront</span><span class="group">External</span></a>
+        <a class="adm-palette-item" href="{{ url_for('logout') }}" data-palette-item="logout sign out exit">{{ icon('logout', 'sm') }}<span>Sign out</span><span class="group">Account</span></a>
+        <div class="adm-palette-empty" hidden>No matches found.</div>
+      </div>
+      <div class="adm-palette-foot">
+        <span><kbd>↑</kbd><kbd>↓</kbd> navigate</span>
+        <span><kbd>↵</kbd> open</span>
+        <span><kbd>esc</kbd> close</span>
       </div>
     </div>
+  </div>
 
-    <div class="admsection">
-      <a class="{{ 'active' if request.path == '/admin' }}" href="/admin">📊 Dashboard</a>
-    </div>
+  <!-- ===================== Toasts ===================== -->
+  <div class="adm-toasts" aria-live="polite" aria-atomic="true">
+    {% with msgs = get_flashed_messages(with_categories=true) %}
+    {% for cat, msg in msgs %}
+    <div class="adm-flash" data-kind="{{ cat }}" data-message="{{ msg }}" hidden></div>
+    {% endfor %}
+    {% endwith %}
+  </div>
 
-    <div class="admgroup">Store</div>
-    <div class="admsection">
-      <a class="{{ 'active' if request.path.startswith('/admin/products') }}" href="/admin/products">📦 Products</a>
-      <a class="{{ 'active' if request.path.startswith('/admin/listings') }}" href="/admin/listings">🏪 Marketplace{% if n_pend %} <span class="pill warn">{{ n_pend }}</span>{% endif %}</a>
-      <a class="{{ 'active' if request.path.startswith('/admin/orders') }}" href="/admin/orders">🧾 Orders</a>
-      <a class="{{ 'active' if request.path.startswith('/admin/payments') }}" href="/admin/payments">💳 Payments</a>
-    </div>
-
-    <div class="admgroup">People</div>
-    <div class="admsection">
-      <a class="{{ 'active' if request.path.startswith('/admin/applications') }}" href="/admin/applications">📋 Applications{% if n_apps %} <span class="pill warn">{{ n_apps }}</span>{% endif %}</a>
-      <a class="{{ 'active' if request.path.startswith('/admin/users') }}" href="/admin/users">👥 Users{% if n_sellreq %} <span class="pill warn">{{ n_sellreq }}</span>{% endif %}</a>
-      <a class="{{ 'active' if request.path.startswith('/admin/account') }}" href="/admin/account">🔑 Admin accounts</a>
-    </div>
-
-    <div class="admgroup">Site</div>
-    <div class="admsection">
-      <a class="{{ 'active' if request.path.startswith('/admin/content') }}" href="/admin/content">📝 Site content</a>
-      <a class="{{ 'active' if request.path.startswith('/admin/settings/payments') }}" href="/admin/settings/payments">🔘 Payment settings</a>
-      <a class="{{ 'active' if request.path.startswith('/admin/messages') }}" href="/admin/messages">✉️ Messages</a>
-      <a class="{{ 'active' if request.path.startswith('/admin/import') }}" href="/admin/import">💾 Import / Export</a>
-    </div>
-
-    <a class="btn outline small adm-back" href="/">← Back to store</a>
-  </aside>
-
-  <section class="admmain">
-    {% if admin_title %}
-    <div class="admhead">
-      <div class="admhead-info">
-        <h1>{{ admin_title }}</h1>
-        {% if admin_subtitle %}<p class="muted">{{ admin_subtitle }}</p>{% endif %}
-      </div>
-      <div class="admhead-actions">{% block admin_actions %}{% endblock %}</div>
-    </div>
-    {% endif %}
-    <div class="cp-savebar">{% block admin %}{% endblock %}</div>
-  </section>
-</div>
-{% endblock %}
+</div><!-- /.adm-app -->
+<script src="{{ url_for('static', filename='admin.js') }}"></script>
+</body>
+</html>

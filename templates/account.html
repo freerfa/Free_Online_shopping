@@ -1,5 +1,11 @@
 {% extends "base.html" %}{% block content %}
 <h1>{{ 'account.title'|t(user=user.username) }}</h1>
+<div class="acctstatus">
+  <span class="pill {{ 'ok' if my_status == 'active' else ('bad' if my_status == 'blocked' else 'warn') }}">{{ my_status }}</span>
+  {% for key, label in perm_labels.items() %}
+  <span class="pill {{ 'ok' if my_perms.get(key, true) else 'bad' }}">{{ label }}</span>
+  {% endfor %}
+</div>
 <p class="muted"><a href="{{ url_for('user_payment') }}" class="btn small">{{ 'account.manage_payment'|t }}</a></p>
 <h2>{{ 'account.recent_orders'|t }}</h2>
 {% for o in orders %}

@@ -2,63 +2,106 @@
 {% set admin_title = "Site content" %}
 {% set admin_subtitle = "Everything here appears on the public site instantly after saving." %}
 {% block admin %}
-<div class="adm-paneled">
-  <nav class="adm-pane" aria-label="Settings">
-    <h3>Content</h3>
-    <ul>
-      <li><a class="active" href="/admin/content">🏷️ Store identity</a></li>
-      <li><a href="/admin/content#hero">🖼️ Homepage hero</a></li>
-      <li><a href="/admin/content#about">📖 About & mission</a></li>
-      <li><a href="/admin/content#contact">📞 Contact details</a></li>
-      <li><a href="/admin/content#footer">🦶 Footer</a></li>
-    </ul>
-  </nav>
-  <div class="adm-pane-body">
-    <form method="post">
-      <input type="hidden" name="csrf_token" value="{{ csrf }}">
+{% from "_icons.html" import icon %}
 
-      <div id="identity" class="card admcard" style="margin-top:1rem">
-        <h3>🏷️ Store identity</h3>
-        <div class="frow">
-          <label>Store name<input name="name" value="{{ site.get('name','') }}"></label>
-          <label>Tagline<input name="tagline" value="{{ site.get('tagline','') }}"></label>
-          <label>Currency<input name="currency" value="{{ site.get('currency','SSP') }}"></label>
-          <label style="margin-top:.5rem">Currency list (JSON)<textarea name="currencies" rows="10" style="width:100%">{{ json.dumps(site.get('currencies') or [], indent=2) }}</textarea></label>
-          <label>Announcement bar<input name="announcement" value="{{ site.get('announcement','') }}"></label>
+<form method="post" class="stack">
+  <input type="hidden" name="csrf_token" value="{{ csrf }}">
+
+  <section class="adm-card" id="identity">
+    <div class="adm-card-head"><h3>{{ icon('tag', 'sm') }} Store identity</h3></div>
+    <div class="adm-card-body">
+      <div class="adm-form-row">
+        <div class="adm-field">
+          <label for="ct-name">Store name</label>
+          <input id="ct-name" name="name" value="{{ site.get('name','') }}">
+        </div>
+        <div class="adm-field">
+          <label for="ct-tagline">Tagline</label>
+          <input id="ct-tagline" name="tagline" value="{{ site.get('tagline','') }}">
+        </div>
+        <div class="adm-field">
+          <label for="ct-currency">Currency</label>
+          <input id="ct-currency" name="currency" value="{{ site.get('currency','SSP') }}">
         </div>
       </div>
+      <div class="adm-field">
+        <label for="ct-currencies">Currency list (JSON)</label>
+        <textarea id="ct-currencies" name="currencies" rows="8" spellcheck="false">{{ json.dumps(site.get('currencies') or [], indent=2) }}</textarea>
+        <p class="hint">A JSON array of currency objects, e.g. <code>[{"code": "SSP", "symbol": "SSP", "rate": 1.0}]</code></p>
+      </div>
+      <div class="adm-field">
+        <label for="ct-announcement">Announcement bar</label>
+        <input id="ct-announcement" name="announcement" value="{{ site.get('announcement','') }}">
+      </div>
+    </div>
+  </section>
 
-      <div id="hero" class="card admcard" style="margin-top:1rem">
-        <h3>🖼️ Homepage hero</h3>
-        <div class="frow">
-          <label>Hero title<input name="hero_title" value="{{ site.get('hero_title','') }}"></label>
-          <label>Button text<input name="hero_cta" value="{{ site.get('hero_cta','') }}"></label>
+  <section class="adm-card" id="hero">
+    <div class="adm-card-head"><h3>{{ icon('storefront', 'sm') }} Homepage hero</h3></div>
+    <div class="adm-card-body">
+      <div class="adm-form-row">
+        <div class="adm-field">
+          <label for="ct-hero-title">Hero title</label>
+          <input id="ct-hero-title" name="hero_title" value="{{ site.get('hero_title','') }}">
         </div>
-        <label>Hero subtitle<textarea name="hero_subtitle" rows="2">{{ site.get('hero_subtitle','') }}</textarea></label>
-      </div>
-
-      <div id="about" class="card admcard" style="margin-top:1rem">
-        <h3>📖 About & mission</h3>
-        <label>About us<textarea name="about" rows="3">{{ site.get('about','') }}</textarea></label>
-        <label>Mission<textarea name="mission" rows="2">{{ site.get('mission','') }}</textarea></label>
-      </div>
-
-      <div id="contact" class="card admcard" style="margin-top:1rem">
-        <h3>📞 Contact details</h3>
-        <div class="frow">
-          <label>Email<input name="contact_email" value="{{ site.get('contact_email','') }}"></label>
-          <label>Phone<input name="contact_phone" value="{{ site.get('contact_phone','') }}"></label>
-          <label>Address<input name="address" value="{{ site.get('address','') }}"></label>
+        <div class="adm-field">
+          <label for="ct-hero-cta">Button text</label>
+          <input id="ct-hero-cta" name="hero_cta" value="{{ site.get('hero_cta','') }}">
         </div>
       </div>
-
-      <div id="footer" class="card admcard" style="margin-top:1rem">
-        <h3>🦶 Footer</h3>
-        <label>Footer text<input name="footer_text" value="{{ site.get('footer_text','') }}"></label>
+      <div class="adm-field">
+        <label for="ct-hero-sub">Hero subtitle</label>
+        <textarea id="ct-hero-sub" name="hero_subtitle" rows="2">{{ site.get('hero_subtitle','') }}</textarea>
       </div>
+    </div>
+  </section>
 
-      <button class="btn" style="margin-top:1rem">Save all changes</button>
-    </form>
+  <section class="adm-card" id="about">
+    <div class="adm-card-head"><h3>{{ icon('info', 'sm') }} About &amp; mission</h3></div>
+    <div class="adm-card-body">
+      <div class="adm-field">
+        <label for="ct-about">About us</label>
+        <textarea id="ct-about" name="about" rows="4">{{ site.get('about','') }}</textarea>
+      </div>
+      <div class="adm-field">
+        <label for="ct-mission">Mission</label>
+        <textarea id="ct-mission" name="mission" rows="3">{{ site.get('mission','') }}</textarea>
+      </div>
+    </div>
+  </section>
+
+  <section class="adm-card" id="contact">
+    <div class="adm-card-head"><h3>{{ icon('mail', 'sm') }} Contact details</h3></div>
+    <div class="adm-card-body">
+      <div class="adm-form-row">
+        <div class="adm-field">
+          <label for="ct-email">Email</label>
+          <input id="ct-email" type="email" name="contact_email" value="{{ site.get('contact_email','') }}">
+        </div>
+        <div class="adm-field">
+          <label for="ct-phone">Phone</label>
+          <input id="ct-phone" name="contact_phone" value="{{ site.get('contact_phone','') }}">
+        </div>
+        <div class="adm-field">
+          <label for="ct-address">Address</label>
+          <input id="ct-address" name="address" value="{{ site.get('address','') }}">
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="adm-card" id="footer">
+    <div class="adm-card-head"><h3>{{ icon('download', 'sm') }} Footer</h3></div>
+    <div class="adm-card-body">
+      <div class="adm-field">
+        <label for="ct-footer">Footer text</label>
+        <textarea id="ct-footer" name="footer_text" rows="2">{{ site.get('footer_text','') }}</textarea>
+      </div>
+    </div>
+  </section>
+
+  <div class="adm-savebar">
+    <button class="adm-btn" type="submit">{{ icon('check', 'sm') }} Save all changes</button>
   </div>
-</div>
+</form>
 {% endblock %}

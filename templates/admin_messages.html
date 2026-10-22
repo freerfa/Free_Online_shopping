@@ -2,26 +2,52 @@
 {% set admin_title = "Messages" %}
 {% set admin_subtitle = "Customer messages sent through the contact form. Reply via email or delete." %}
 {% block admin %}
-<div class="adm-paneled">
-  <nav class="adm-pane" aria-label="Messages">
-    <h3>Messages</h3>
-    <ul>
-      <li><a class="active" href="/admin/messages">✉️ All messages</a></li>
-    </ul>
-  </nav>
-  <div class="adm-pane-body">
-    <div class="admcard">
-      <h3>Messages ({{ msgs|length }})</h3>
-      {% for m in msgs %}
-      <div class="card msgrow">
-  <b>{{ m["name"] }}</b> <span class="muted">&lt;{{ m["email"] }}&gt; · {{ (m["created"] or '')[:16] }}</span>
-  <h3>{{ m["subject"] or '(no subject)' }}</h3>
-  <p>{{ m["message"] }}</p>
-  <div class="btnrow"><a class="btn small" href="mailto:{{ m['email'] }}">Reply</a>
-  <form method="post" onsubmit="return confirm('Delete this message?')"><input type="hidden" name="csrf_token" value="{{ csrf }}"><input type="hidden" name="mid" value="{{ m["id"] }}"><button class="btn small danger">Delete</button></form></div>
-</div>
-{% else %}<p class="muted">No messages yet.</p>{% endfor %}
+{% from "_icons.html" import icon %}
+
+<section class="adm-card">
+  <div class="adm-card-head">
+    <h3>{{ icon('inbox', 'sm') }} Messages <span class="muted small">({{ msgs|length }})</span></h3>
+    <div class="adm-field" style="flex:0 1 260px">
+      <input type="search" placeholder="Filter messages…" data-filter-target="#msg-list .adm-record" data-filter-empty="#msg-empty" aria-label="Filter messages">
     </div>
   </div>
-</div>
+  <div class="adm-card-body">
+    <div id="msg-list">
+      {% for m in msgs %}
+      <details class="adm-record">
+        <summary>
+          <span class="adm-record-title">{{ m["name"] }}</span>
+          <span class="muted small truncate">&lt;{{ m["email"] }}&gt; · {{ (m["created"] or '')[:16] }}</span>
+          <span class="adm-badge brand">{{ m["subject"] or '(no subject)' }}</span>
+        </summary>
+        <div class="adm-record-body">
+          <p>{{ m["message"] }}</p>
+          <div class="adm-form-actions">
+            <a class="adm-btn secondary sm" href="mailto:{{ m['email'] }}">{{ icon('mail', 'sm') }} Reply</a>
+            <form method="post" onsubmit="return confirm('Delete this message?')">
+              <input type="hidden" name="csrf_token" value="{{ csrf }}">
+              <input type="hidden" name="mid" value="{{ m["id"] }}">
+              <button class="adm-btn danger-soft sm" type="submit">{{ icon('trash', 'sm') }} Delete</button>
+            </form>
+          </div>
+        </div>
+      </details>
+      {% endfor %}
+    </div>
+
+    <div class="adm-empty" id="msg-empty" hidden>
+      <span class="adm-empty-icon">{{ icon('inbox', 'md') }}</span>
+      <h3>No matching messages</h3>
+      <p>Try a different filter keyword.</p>
+    </div>
+
+    {% if not msgs %}
+    <div class="adm-empty">
+      <span class="adm-empty-icon">{{ icon('inbox', 'md') }}</span>
+      <h3>No messages yet</h3>
+      <p>Messages sent from the contact form will land here.</p>
+    </div>
+    {% endif %}
+  </div>
+</section>
 {% endblock %}

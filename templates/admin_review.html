@@ -1,83 +1,110 @@
 {% extends "admin_base.html" %}
 {% set admin_title = "Review Listing" %}
-{% set admin_subtitle = "Review product: {{ p.name }}" %}
+{% set admin_subtitle = "Review product: " ~ p.name %}
 {% block admin %}
-<div class="adm-paneled">
-  <nav class="adm-pane" aria-label="Review">
-    <h3>Review</h3>
-    <ul>
-      <li><a class="active" href="/admin/listings/review/{{ p.id }}">🔍 Review listing</a></li>
-      <li><a href="/admin/listings">🏪 Back to listings</a></li>
-    </ul>
-  </nav>
-  <div class="adm-pane-body">
-    <div class="admcard">
-      <h3>🔍 Review: {{ p.name }}</h3>
-<p>
-  <span class="pill {{ 'ok' if p.status == 'approved' else ('bad' if p.status == 'rejected' else 'warn') }}">{{ p.status }}</span>
-  <span class="pill {{ 'ok' if p.fee_status == 'paid' else 'bad' }}">fee {{ p.get('fee_amount', 0) }} {{ p.fee_status }}</span>
-  <span class="pill">{{ (p.created or '')[:16] }}</span>
-</p>
-<div class="pdp">
-  <div>
-    {% set imgs = p.get('images') or ([p.image] if p.image else []) %}
-    <h3>Photos ({{ imgs|length }})</h3>
-    {% if imgs %}
-    <div class="imgrow">
-      {% for im in imgs %}<div class="imgthumb"><img src="{{ im }}" alt=""></div>{% endfor %}
-    </div>
-    {% else %}<p class="muted">No photos.</p>{% endif %}
-    <h3>Description</h3>
-    <p>{{ p.desc }}</p>
-    <h3>📝 Review notes for the seller</h3>
-    <form method="post">
-      <input type="hidden" name="csrf_token" value="{{ csrf }}">
-      <textarea name="notes" rows="4" placeholder="e.g. Please add clearer photos, or the price is too high for this condition...">{{ p.get('review_notes', '') }}</textarea>
-      <div class="btnrow">
-        <button class="btn small ghost" name="action" value="notes">💾 Save notes & mark reviewing</button>
-        <button class="btn small" name="action" value="approve">✔ Approve & publish</button>
-        <button class="btn small danger" name="action" value="reject">✖ Reject with feedback</button>
+{% from "_icons.html" import icon %}
+
+<div class="adm-pagehead">
+  <a class="adm-btn ghost sm" href="{{ url_for('admin_listings') }}">{{ icon('arrowleft', 'sm') }} Back to listings</a>
+</div>
+
+<div class="adm-grid-sidebar">
+  <div class="stack">
+    <section class="adm-card">
+      <div class="adm-card-head">
+        <h3>{{ icon('search', 'sm') }} Review: {{ p.name }}</h3>
+        <div class="row">
+          <span class="adm-badge {{ 'ok' if p.status == 'approved' else ('bad' if p.status == 'rejected' else 'warn') }}"><span class="dot"></span>{{ p.status }}</span>
+          <span class="adm-badge {{ 'ok' if p.fee_status == 'paid' else 'bad' }}">fee {{ p.get('fee_amount', 0) }} {{ p.fee_status }}</span>
+          <span class="adm-badge">{{ (p.created or '')[:16] }}</span>
+        </div>
       </div>
-    </form>
-  </div>
-  <div>
-    <div class="card">
-      <h3>Product</h3>
-      <p><b>{{ p.name }}</b><br>
-        {{ site.get('currency','SSP') }} {{ p.price }} · stock {{ p.stock }}<br>
-        category: {{ p.category }} · type: {{ p.post_type }}<br>
-        seller: <b>{{ p.seller }}</b></p>
-    </div>
-    <div class="card">
-      <h3>🏪 Seller</h3>
-      {% if seller %}
-      <p><b>{{ seller.username }}</b><br>
-        {{ seller.email or 'no email' }}<br>
-        joined {{ (seller.created or '')[:16] }}<br>
-        seller access: <span class="pill {{ 'ok' if seller.can_sell else 'bad' }}">{{ 'granted' if seller.can_sell else 'not granted' }}</span></p>
-      {% else %}
-      <p class="muted">Seller account not found (deleted).</p>
-      {% endif %}
-    </div>
-    <div class="card">
-      <h3>💰 Advertisement fee ({{ site.get('currency','SSP') }} {{ fee }} per post)</h3>
-      <div class="btnrow">
-        {% if p.fee_status == 'paid' %}
-        <form method="post">
-          <input type="hidden" name="csrf_token" value="{{ csrf }}">
-          <button class="btn small ghost" name="action" value="fee_unpaid">Mark fee unpaid</button>
-        </form>
+      <div class="adm-card-body">
+        {% set imgs = p.get('images') or ([p.image] if p.image else []) %}
+        <div class="adm-label">Photos ({{ imgs|length }})</div>
+        {% if imgs %}
+        <div class="adm-imgrow">
+          {% for im in imgs %}<div class="adm-imgthumb"><img src="{{ im }}" alt=""></div>{% endfor %}
+        </div>
         {% else %}
-        <form method="post">
+        <p class="muted">No photos.</p>
+        {% endif %}
+
+        <div class="adm-label">Description</div>
+        <p>{{ p.desc }}</p>
+      </div>
+    </section>
+
+    <section class="adm-card">
+      <div class="adm-card-head"><h3>{{ icon('pencil', 'sm') }} Review notes for the seller</h3></div>
+      <div class="adm-card-body">
+        <form method="post" class="adm-form">
           <input type="hidden" name="csrf_token" value="{{ csrf }}">
-          <button class="btn small" name="action" value="fee_paid">💰 Mark fee paid</button>
+          <div class="adm-field">
+            <label for="rv-notes">Notes</label>
+            <textarea id="rv-notes" name="notes" rows="4" placeholder="e.g. Please add clearer photos, or the price is too high for this condition...">{{ p.get('review_notes', '') }}</textarea>
+          </div>
+          <div class="adm-form-actions">
+            <button class="adm-btn ghost sm" name="action" value="notes" type="submit">{{ icon('clipboard', 'sm') }} Save notes &amp; mark reviewing</button>
+            <button class="adm-btn ok sm" name="action" value="approve" type="submit">{{ icon('check', 'sm') }} Approve &amp; publish</button>
+            <button class="adm-btn danger-soft sm" name="action" value="reject" type="submit">{{ icon('x', 'sm') }} Reject with feedback</button>
+          </div>
         </form>
+      </div>
+    </section>
+  </div>
+
+  <aside class="stack">
+    <section class="adm-card">
+      <div class="adm-card-head"><h3>{{ icon('box', 'sm') }} Product</h3></div>
+      <div class="adm-card-body">
+        <p>
+          <span class="strong">{{ p.name }}</span><br>
+          {{ site.get('currency','SSP') }} {{ p.price }} · stock {{ p.stock }}<br>
+          category: {{ p.category }} · type: {{ p.post_type }}<br>
+          seller: <span class="strong">{{ p.seller }}</span>
+        </p>
+      </div>
+    </section>
+
+    <section class="adm-card">
+      <div class="adm-card-head"><h3>{{ icon('store', 'sm') }} Seller</h3></div>
+      <div class="adm-card-body">
+        {% if seller %}
+        <p>
+          <span class="strong">{{ seller.username }}</span><br>
+          {{ seller.email or 'no email' }}<br>
+          joined {{ (seller.created or '')[:16] }}<br>
+          seller access:
+          <span class="adm-badge {{ 'ok' if seller.can_sell else 'bad' }}"><span class="dot"></span>{{ 'granted' if seller.can_sell else 'not granted' }}</span>
+        </p>
+        {% else %}
+        <p class="muted">Seller account not found (deleted).</p>
         {% endif %}
       </div>
-    </div>
-  </div>
-</div>
-    </div>
-  </div>
+    </section>
+
+    <section class="adm-card">
+      <div class="adm-card-head">
+        <h3>{{ icon('wallet', 'sm') }} Advertisement fee</h3>
+        <span class="muted small">{{ site.get('currency','SSP') }} {{ fee }} per post</span>
+      </div>
+      <div class="adm-card-body">
+        <div class="adm-form-actions">
+          {% if p.fee_status == 'paid' %}
+          <form method="post">
+            <input type="hidden" name="csrf_token" value="{{ csrf }}">
+            <button class="adm-btn ghost sm" name="action" value="fee_unpaid" type="submit">Mark fee unpaid</button>
+          </form>
+          {% else %}
+          <form method="post">
+            <input type="hidden" name="csrf_token" value="{{ csrf }}">
+            <button class="adm-btn sm" name="action" value="fee_paid" type="submit">{{ icon('wallet', 'sm') }} Mark fee paid</button>
+          </form>
+          {% endif %}
+        </div>
+      </div>
+    </section>
+  </aside>
 </div>
 {% endblock %}

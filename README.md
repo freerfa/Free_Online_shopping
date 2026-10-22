@@ -2,6 +2,27 @@
 
 Flask + SQLite (JSON-blob CMS) + Jinja2 online store: catalog, cart, checkout, orders, contact form, user accounts, and a full `/admin` CMS.
 
+## Documentation
+
+Full technical documentation lives in [`docs/`](docs/README.md):
+
+| # | Document | What it covers |
+|---|---|---|
+| 01 | [Architecture](docs/01-architecture.md) | App layout, request lifecycle, design decisions |
+| 02 | [Data Model](docs/02-data-model.md) | SQLite tables, `site_data` JSON blobs, user records |
+| 03 | [Route Reference](docs/03-routes.md) | Every route, its methods, guards and behaviour |
+| 04 | [Access Rights](docs/04-access-rights.md) | Account status, permission flags, enforcement points |
+| 05 | [Admin CMS](docs/05-admin-cms.md) | Every admin page and the POST actions it handles |
+| 06 | [Payments](docs/06-payments.md) | Two-sided payment system, methods, admin ledger |
+| 07 | [i18n & Currency](docs/07-i18n-currency.md) | Language files, translation filter, multi-currency |
+| 08 | [Uploads & Security](docs/08-uploads-security.md) | File validation, CSRF, hashing, access control |
+| 09 | [Deployment](docs/09-deployment.md) | Local run, Render, environment variables |
+| 10 | [Testing](docs/10-testing.md) | Smoke tests and the manual checklist |
+
+Release history is in [`CHANGELOG.md`](CHANGELOG.md). The docs are living
+documentation — see [Maintaining this documentation](docs/README.md#maintaining-this-documentation)
+for the rules on updating them alongside code changes.
+
 ## Run locally
 
 ```bash
@@ -12,6 +33,19 @@ python3 app.py            # open http://127.0.0.1:8080  (PORT=8080 by default on
 > macOS note: port 5000 is reserved by the AirPlay Receiver on modern macOS, so the app defaults tests to `PORT=8080` (`PORT=5000 python3 app.py` works on servers/Linux).
 
 Default admin login: `admin` / `admin123` — change it under **Admin → Account** after first login.
+
+## Customer access rights
+
+Admins can control, per customer account, both the account **status**
+(`active`, `suspended`, `blocked`) and the **feature permissions** it may
+use (`shop`, `sell`, `payment`, `apply`, `contact`), from **Admin → Users**.
+
+- Suspended accounts keep browsing but are denied every restricted action.
+- Blocked accounts are signed out on their next request and refused at login.
+- Admins are never restricted, and legacy accounts default to fully active.
+- Access rights live inside the existing `users` blob — no migration needed.
+
+See [Access Rights](docs/04-access-rights.md) for the full behaviour.
 
 ## Design notes
 

@@ -2,36 +2,46 @@
 {% set admin_title = "Payment settings" %}
 {% set admin_subtitle = "Enable or disable the customer-facing payment system. When disabled, customers can only place orders with Cash on Delivery." %}
 {% block admin %}
-<div class="adm-paneled">
-  <nav class="adm-pane" aria-label="Settings">
-    <h3>Settings</h3>
-    <ul>
-      <li><a class="active" href="/admin/settings/payments">🔘 Payment system</a></li>
-    </ul>
-  </nav>
-  <div class="adm-pane-body">
-    <div class="card">
-      <form method="post"><input type="hidden" name="csrf_token" value="{{ csrf }}">
-        <div class="frow">
-          <label>
-            <input type="checkbox" name="enabled" value="on" {% if enabled %}checked{% endif %}>
-            Payment system enabled
-          </label>
+{% from "_icons.html" import icon %}
+
+<div class="adm-grid-2">
+  <section class="adm-card">
+    <div class="adm-card-head"><h3>{{ icon('wallet', 'sm') }} Payment system</h3></div>
+    <div class="adm-card-body">
+      <form method="post" class="adm-form">
+        <input type="hidden" name="csrf_token" value="{{ csrf }}">
+        <label class="adm-switch">
+          <input type="checkbox" name="enabled" value="on" {{ 'checked' if enabled }}>
+          <span class="adm-switch-track" aria-hidden="true"></span>
+          <span>Payment system enabled</span>
+        </label>
+        <p class="hint">
+          When <strong>off</strong>, the checkout payment-method picker, saved payment methods, and receipt
+          submission are hidden. Only Cash on Delivery orders can be placed. Admin payment records remain viewable.
+        </p>
+        <div class="adm-form-actions">
+          <button class="adm-btn" type="submit">{{ icon('check', 'sm') }} Save setting</button>
         </div>
-        <p class="muted">When <strong>off</strong>, the checkout payment-method picker, saved payment methods, and receipt submission are hidden. Only Cash on Delivery orders can be placed. Admin payment records remain viewable.</p>
-        <button class="btn" type="submit">Save setting</button>
       </form>
     </div>
+  </section>
 
-    <div class="card admcard" style="margin-top:1rem">
-      <h3>Current state</h3>
-      <p class="muted">
-        Payment system is <strong>{{ 'enabled' if enabled else 'disabled' }}</strong>.
-        {% if not enabled %}
-        Customers will see only Cash on Delivery at checkout.
-        {% endif %}
+  <section class="adm-card">
+    <div class="adm-card-head"><h3>{{ icon('info', 'sm') }} Current state</h3></div>
+    <div class="adm-card-body">
+      <p>
+        Payment system is
+        <span class="adm-badge {{ 'ok' if enabled else 'bad' }}"><span class="dot"></span>{{ 'enabled' if enabled else 'disabled' }}</span>
       </p>
+      {% if not enabled %}
+      <p class="muted">Customers will see only Cash on Delivery at checkout.</p>
+      {% else %}
+      <p class="muted">Customers can pay with card, mobile money, or bank transfer.</p>
+      {% endif %}
+      <div class="adm-form-actions">
+        <a class="adm-btn secondary sm" href="{{ url_for('admin_payments') }}">{{ icon('card', 'sm') }} Open payment ledger</a>
+      </div>
     </div>
-  </div>
+  </section>
 </div>
 {% endblock %}

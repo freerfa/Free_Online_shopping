@@ -2,22 +2,41 @@
 {% set admin_title = "Import / Export" %}
 {% set admin_subtitle = "Backup and restore your site content as JSON. Export settings, products, categories, testimonials, and partners." %}
 {% block admin %}
-<div class="adm-paneled">
-  <nav class="adm-pane" aria-label="Import/Export">
-    <h3>Content</h3>
-    <ul>
-      <li><a class="active" href="/admin/import">💾 Import / Export</a></li>
-    </ul>
-  </nav>
-  <div class="adm-pane-body">
-    <div class="admcard">
-      <h3>Import / Export</h3>
-      <div class="cardgrid2">
-        <div class="card"><h3>💾 Export</h3><p class="muted">Download the full site content as JSON (site settings, products, categories, testimonials, partners).</p><a class="btn" href="{{ url_for('admin_export') }}">Download JSON</a></div>
-        <div class="card"><h3>📥 Import</h3><p class="muted">Paste exported JSON to restore or bulk-edit content. Protected keys (<b>admin_users</b>, <b>users</b>, <b>admin_account</b>) are never overwritten.</p></div>
-      </div>
-      <form method="post"><input type="hidden" name="csrf_token" value="{{ csrf }}"><textarea name="json_data" rows="16" placeholder='{"site": {"name": "..."}, "products": [...]}'></textarea><br><button class="btn">Import content</button></form>
+{% from "_icons.html" import icon %}
+
+<div class="adm-grid-2">
+  <section class="adm-card">
+    <div class="adm-card-head"><h3>{{ icon('download', 'sm') }} Export</h3></div>
+    <div class="adm-card-body">
+      <p class="muted">Download the full site content as JSON (site settings, products, categories, testimonials, partners).</p>
+      <a class="adm-btn" href="{{ url_for('admin_export') }}">{{ icon('download', 'sm') }} Download JSON</a>
     </div>
-  </div>
+  </section>
+
+  <section class="adm-card">
+    <div class="adm-card-head"><h3>{{ icon('upload', 'sm') }} Import</h3></div>
+    <div class="adm-card-body">
+      <p class="muted">
+        Paste exported JSON to restore or bulk-edit content.
+        Protected keys (<b>admin_users</b>, <b>users</b>, <b>admin_account</b>) are never overwritten.
+      </p>
+    </div>
+  </section>
 </div>
+
+<section class="adm-card mt-2">
+  <div class="adm-card-head"><h3>{{ icon('clipboard', 'sm') }} Paste JSON to import</h3></div>
+  <div class="adm-card-body">
+    <form method="post">
+      <input type="hidden" name="csrf_token" value="{{ csrf }}">
+      <div class="adm-field">
+        <label for="im-json">JSON data</label>
+        <textarea id="im-json" name="json_data" rows="16" spellcheck="false" placeholder='{"site": {"name": "..."}, "products": [...]}'></textarea>
+      </div>
+      <div class="adm-form-actions">
+        <button class="adm-btn" type="submit">{{ icon('upload', 'sm') }} Import content</button>
+      </div>
+    </form>
+  </div>
+</section>
 {% endblock %}

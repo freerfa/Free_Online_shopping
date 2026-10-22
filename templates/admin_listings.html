@@ -2,98 +2,147 @@
 {% set admin_title = "Marketplace Listings" %}
 {% set admin_subtitle = "Products posted by shoppers. Review each post, collect the advertisement fee (mobile money / cash), then approve to publish it in the shop." %}
 {% block admin %}
-<div class="adm-paneled">
-  <nav class="adm-pane" aria-label="Listings">
-    <h3>Listings</h3>
-    <ul>
-      <li><a class="active" href="/admin/listings">🏪 All listings</a></li>
-    </ul>
-  </nav>
-  <div class="adm-pane-body">
-    <div class="admcard">
-      <h3>Marketplace listings ({{ listings|length }})</h3>
+{% from "_icons.html" import icon %}
 {% set reqs = users|selectattr('sell_request', 'equalto', 'pending')|rejectattr('can_sell', 'defined')|list %}
+
 {% if reqs %}
-<details class="card addbox" open>
-  <summary><b>✋ Seller access requests ({{ reqs|length }})</b></summary>
-  {% for u in reqs %}
-  <div class="btnrow">
-    <b>{{ u.username }}</b> <span class="muted">{{ u.email or '' }}</span>
-    <form method="post" action="/admin/users">
-      <input type="hidden" name="csrf_token" value="{{ csrf }}">
-      <input type="hidden" name="action" value="grant">
-      <input type="hidden" name="username" value="{{ u.username }}">
-      <button class="btn small">✔ Grant seller access</button>
-    </form>
+<section class="adm-card mb-2">
+  <div class="adm-card-head">
+    <h3>{{ icon('users', 'sm') }} Seller access requests <span class="muted small">({{ reqs|length }})</span></h3>
   </div>
-  {% endfor %}
-</details>
-{% endif %}
-<details class="card addbox">
-  <summary><b>⚙️ Advertisement fee settings</b></summary>
-  <form method="post" class="inline">
-    <input type="hidden" name="csrf_token" value="{{ csrf }}">
-    <input type="hidden" name="action" value="fee_set">
-    <label>Fee per post ({{ site.get('currency','SSP') }})<input name="fee" type="number" min="0" value="{{ fee }}"></label>
-    <button class="btn small">Save fee</button>
-  </form>
-</details>
-{% for p in listings %}
-<details class="card prodrow">
-  <summary>
-    {% if p.image %}<img class="thumb" src="{{ p.image }}" alt="">{% else %}<span class="thumb placeholder">📦</span>{% endif %}
-    <b>{{ p.name }}</b> <span class="muted">by {{ p.seller }} · {{ (p.created or '')[:10] }}</span>
-    <span class="price">{{ site.get('currency','SSP') }} {{ p.price }}</span>
-    <span class="pill {{ 'ok' if p.status == 'approved' else ('bad' if p.status == 'rejected' else 'warn') }}">{{ p.status }}</span>
-    <span class="pill {{ 'ok' if p.fee_status == 'paid' else 'bad' }}">fee {{ p.get('fee_amount', 0) }} {{ p.fee_status }}</span>
-  </summary>
-  <p>{{ p.desc }}</p>
-  {% set imgs = p.get('images') or ([p.image] if p.image else []) %}
-  {% if imgs|length > 1 %}<div class="imgrow">{% for im in imgs %}<div class="imgthumb"><img src="{{ im }}" alt=""></div>{% endfor %}</div>{% endif %}
-  <div class="btnrow">
-    <a class="btn small ghost" href="/admin/listings/review/{{ p.id }}">🔍 Review</a>
-    {% if p.status != 'approved' %}
-    <form method="post">
-      <input type="hidden" name="csrf_token" value="{{ csrf }}">
-      <input type="hidden" name="action" value="approve">
-      <input type="hidden" name="pid" value="{{ p.id }}">
-      <button class="btn small">✔ Approve & publish</button>
-    </form>
-    {% else %}
-    <form method="post">
-      <input type="hidden" name="csrf_token" value="{{ csrf }}">
-      <input type="hidden" name="action" value="reject">
-      <input type="hidden" name="pid" value="{{ p.id }}">
-      <button class="btn small danger">⏸ Unpublish</button>
-    </form>
-    {% endif %}
-    {% if p.fee_status == 'paid' %}
-    <form method="post">
-      <input type="hidden" name="csrf_token" value="{{ csrf }}">
-      <input type="hidden" name="action" value="fee_unpaid">
-      <input type="hidden" name="pid" value="{{ p.id }}">
-      <button class="btn small ghost">Mark fee unpaid</button>
-    </form>
-    {% else %}
-    <form method="post">
-      <input type="hidden" name="csrf_token" value="{{ csrf }}">
-      <input type="hidden" name="action" value="fee_paid">
-      <input type="hidden" name="pid" value="{{ p.id }}">
-      <button class="btn small">💰 Mark fee paid</button>
-    </form>
-    {% endif %}
-    <form method="post" onsubmit="return confirm('Delete this post and its photos?')">
-      <input type="hidden" name="csrf_token" value="{{ csrf }}">
-      <input type="hidden" name="action" value="delete">
-      <input type="hidden" name="pid" value="{{ p.id }}">
-      <button class="btn small danger">Delete</button>
-    </form>
-  </div>
-</details>
-{% else %}
-<p class="muted">No user posts yet. They appear here when a shopper submits a product for review.</p>
-{% endfor %}
+  <div class="adm-card-body">
+    <div class="stack-sm">
+      {% for u in reqs %}
+      <div class="row">
+        <span class="strong">{{ u.username }}</span>
+        <span class="muted small">{{ u.email or '' }}</span>
+        <span class="grow"></span>
+        <form method="post" action="{{ url_for('admin_users') }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf }}">
+          <input type="hidden" name="action" value="grant">
+          <input type="hidden" name="username" value="{{ u.username }}">
+          <button class="adm-btn sm" type="submit">{{ icon('check', 'sm') }} Grant seller access</button>
+        </form>
+      </div>
+      {% endfor %}
     </div>
   </div>
-</div>
+</section>
+{% endif %}
+
+<section class="adm-card mb-2">
+  <details class="adm-record">
+    <summary>
+      {{ icon('wallet', 'sm') }}
+      <span class="adm-record-title">Advertisement fee settings</span>
+      <span class="muted small">Current fee: {{ fee }} {{ site.get('currency','SSP') }} per post</span>
+    </summary>
+    <div class="adm-record-body">
+      <form method="post" class="adm-form">
+        <input type="hidden" name="csrf_token" value="{{ csrf }}">
+        <input type="hidden" name="action" value="fee_set">
+        <div class="adm-field" style="max-width:280px">
+          <label for="fee">Fee per post ({{ site.get('currency','SSP') }})</label>
+          <input id="fee" name="fee" type="number" min="0" value="{{ fee }}">
+        </div>
+        <div class="adm-form-actions">
+          <button class="adm-btn sm" type="submit">{{ icon('check', 'sm') }} Save fee</button>
+        </div>
+      </form>
+    </div>
+  </details>
+</section>
+<section class="adm-card">
+  <div class="adm-card-head">
+    <h3>{{ icon('store', 'sm') }} Marketplace listings <span class="muted small">({{ listings|length }})</span></h3>
+    <div class="adm-field" style="flex:0 1 260px">
+      <input type="search" placeholder="Filter listings…" data-filter-target="#list-list .adm-record" data-filter-empty="#list-empty" aria-label="Filter listings">
+    </div>
+  </div>
+  <div class="adm-card-body">
+    <div id="list-list">
+      {% for p in listings %}
+      <details class="adm-record">
+        <summary>
+          {% if p.image %}
+            <img class="adm-thumb" src="{{ p.image }}" alt="">
+          {% else %}
+            <span class="adm-thumb placeholder">{{ icon('box', 'md') }}</span>
+          {% endif %}
+          <span class="adm-record-title">{{ p.name }}</span>
+          <span class="muted small">by {{ p.seller }} · {{ (p.created or '')[:10] }}</span>
+          <span class="strong num">{{ site.get('currency','SSP') }} {{ p.price }}</span>
+          <span class="adm-badge {{ 'ok' if p.status == 'approved' else ('bad' if p.status == 'rejected' else 'warn') }}"><span class="dot"></span>{{ p.status }}</span>
+          <span class="adm-badge {{ 'ok' if p.fee_status == 'paid' else 'bad' }}">fee {{ p.get('fee_amount', 0) }} {{ p.fee_status }}</span>
+        </summary>
+        <div class="adm-record-body">
+          <p>{{ p.desc }}</p>
+
+          {% set imgs = p.get('images') or ([p.image] if p.image else []) %}
+          {% if imgs|length > 1 %}
+          <div class="adm-imgrow">
+            {% for im in imgs %}<div class="adm-imgthumb"><img src="{{ im }}" alt=""></div>{% endfor %}
+          </div>
+          {% endif %}
+
+          <div class="adm-form-actions">
+            <a class="adm-btn secondary sm" href="{{ url_for('admin_review', pid=p.id) }}">{{ icon('search', 'sm') }} Review</a>
+            {% if p.status != 'approved' %}
+            <form method="post">
+              <input type="hidden" name="csrf_token" value="{{ csrf }}">
+              <input type="hidden" name="action" value="approve">
+              <input type="hidden" name="pid" value="{{ p.id }}">
+              <button class="adm-btn ok sm" type="submit">{{ icon('check', 'sm') }} Approve &amp; publish</button>
+            </form>
+            {% else %}
+            <form method="post">
+              <input type="hidden" name="csrf_token" value="{{ csrf }}">
+              <input type="hidden" name="action" value="reject">
+              <input type="hidden" name="pid" value="{{ p.id }}">
+              <button class="adm-btn secondary sm" type="submit">{{ icon('eye', 'sm') }} Unpublish</button>
+            </form>
+            {% endif %}
+            {% if p.fee_status == 'paid' %}
+            <form method="post">
+              <input type="hidden" name="csrf_token" value="{{ csrf }}">
+              <input type="hidden" name="action" value="fee_unpaid">
+              <input type="hidden" name="pid" value="{{ p.id }}">
+              <button class="adm-btn ghost sm" type="submit">Mark fee unpaid</button>
+            </form>
+            {% else %}
+            <form method="post">
+              <input type="hidden" name="csrf_token" value="{{ csrf }}">
+              <input type="hidden" name="action" value="fee_paid">
+              <input type="hidden" name="pid" value="{{ p.id }}">
+              <button class="adm-btn sm" type="submit">{{ icon('wallet', 'sm') }} Mark fee paid</button>
+            </form>
+            {% endif %}
+            <span class="spacer"></span>
+            <form method="post" onsubmit="return confirm('Delete this post and its photos?')">
+              <input type="hidden" name="csrf_token" value="{{ csrf }}">
+              <input type="hidden" name="action" value="delete">
+              <input type="hidden" name="pid" value="{{ p.id }}">
+              <button class="adm-btn danger-soft sm" type="submit">{{ icon('trash', 'sm') }} Delete</button>
+            </form>
+          </div>
+        </div>
+      </details>
+      {% endfor %}
+    </div>
+
+    <div class="adm-empty" id="list-empty" hidden>
+      <span class="adm-empty-icon">{{ icon('store', 'md') }}</span>
+      <h3>No matching listings</h3>
+      <p>Try a different filter keyword.</p>
+    </div>
+
+    {% if not listings %}
+    <div class="adm-empty">
+      <span class="adm-empty-icon">{{ icon('store', 'md') }}</span>
+      <h3>No user posts yet</h3>
+      <p>They appear here when a shopper submits a product for review.</p>
+    </div>
+    {% endif %}
+  </div>
+</section>
 {% endblock %}

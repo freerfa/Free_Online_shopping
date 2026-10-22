@@ -196,6 +196,48 @@ def user_record(username):
             return u
     return None
 
+# ---------- Access rights ----------
+# Every customer account carries a status plus a set of permission flags.
+# Admins are never restricted.
+ACCESS_STATUSES = ("active", "suspended", "blocked")
+ACCESS_PERMS = {
+    "shop": "Browse the shop and place orders",
+    "sell": "Post products in the marketplace",
+    "payment": "Manage payment methods and pay for orders",
+    "apply": "Submit job applications",
+    "contact": "Send messages through the contact form",
+}
+DEFAULT_PERMS = {k: True for k in ACCESS_PERMS}
+
+def user_status(rec):
+    """Effective account status; missing/legacy accounts are active."""
+    if not rec:
+        return "active"
+    st = rec.get("status", "active")
+    return st if st in ACCESS_STATUSES else "active"
+
+def user_perms(rec):
+    """Effective permission map; unknown/absent flags default to allowed."""
+    saved = (rec or {}).get("perms") or {}
+    out = {}
+    for k in ACCESS_PERMS:
+        out[k] = bool(saved.get(k, True))
+    return out
+
+def has_perm(perm):
+    """Whether the current user may perform a restricted action."""
+    u = current_user()
+    if not u:
+        return False
+    if u.get("is_admin"):
+        return True
+    rec = user_record(u.get("username", ""))
+    if not rec:
+        return False
+    if user_status(rec) != "active":
+        return False
+    return user_perms(rec).get(perm, True)
+
 def can_sell():
     """Seller right: always for admins, for shoppers only when granted by admin."""
     u = current_user()
@@ -204,7 +246,7 @@ def can_sell():
     if u.get("is_admin"):
         return True
     rec = user_record(u.get("username", ""))
-    return bool(rec and rec.get("can_sell"))
+    return bool(rec and rec.get("can_sell") and has_perm("sell"))
 
 def login_required(f):
     @wraps(f)
@@ -223,6 +265,28 @@ def admin_required(f):
             return redirect(url_for("login", next=request.path))
         return f(*a, **kw)
     return w
+
+def perm_required(perm, guest_ok=True):
+    """Gate a route on a customer permission flag (admins always pass).
+
+    With guest_ok=True a not-yet-logged-in visitor is allowed through, so the
+    check only bites for accounts an admin has actually restricted.
+    """
+    def deco(f):
+        @wraps(f)
+        def w(*a, **kw):
+            u = current_user()
+            if not u:
+                if guest_ok:
+                    return f(*a, **kw)
+                flash("Please log in first.", "warning")
+                return redirect(url_for("login", next=request.path))
+            if not has_perm(perm):
+                flash(f"Your account does not have the “{perm}” permission right now.", "danger")
+                return redirect(url_for("index"))
+            return f(*a, **kw)
+        return w
+    return deco
 
 def find_user(username):
     users = get_blob("users", [])
@@ -435,7 +499,7 @@ def inject_globals():
                 n_apps=n_apps, n_pend=n_pend, n_sellreq=n_sellreq,
                 currency=currency, currencies=currencies, currency_symbol=currency_symbol,
                 language=language, languages=LANGUAGES, lang_dir=lang_dir,
-                user=current_user(), is_admin=is_admin())
+                user=current_user(), is_admin=is_admin(), payment_enabled=payment_enabled)
 
 # ---------- Currency (multi-currency support) ----------
 DEFAULT_CURRENCIES = [
@@ -526,6 +590,25 @@ def csrf_guard():
             flash("Security token expired. Please try again.", "danger")
             return redirect(request.path or url_for("index"))
 
+@app.before_request
+def enforce_account_status():
+    """Log out blocked accounts, and keep suspended ones browse-only."""
+    u = current_user()
+    if not u:
+        return
+    if u.get("is_admin"):
+        return
+    rec = user_record(u.get("username", ""))
+    if rec is None:
+        # Account was removed by an admin while this session was open.
+        session.pop("user", None)
+        flash("Your account is no longer available.", "danger")
+        return redirect(url_for("index"))
+    if user_status(rec) == "blocked":
+        session.pop("user", None)
+        flash("Your account has been blocked. Please contact support.", "danger")
+        return redirect(url_for("index"))
+
 # ============================================================
 # PUBLIC ROUTES
 # ============================================================
@@ -582,6 +665,7 @@ def cart():
     return render_template("cart.html", items=items, total=total, count=count)
 
 @app.route("/cart/add/<int:pid>", methods=["POST"])
+@perm_required("shop")
 def cart_add(pid):
     if not any(p.get("id") == pid for p in visible_products()):
         flash("That item is not available.", "danger")
@@ -594,6 +678,7 @@ def cart_add(pid):
     return redirect(request.form.get("next", url_for("cart")))
 
 @app.route("/cart/update", methods=["POST"])
+@perm_required("shop")
 def cart_update():
     cart = get_cart()
     for k in list(cart.keys()):
@@ -611,12 +696,14 @@ def cart_update():
     return redirect(url_for("cart"))
 
 @app.route("/cart/clear", methods=["POST"])
+@perm_required("shop")
 def cart_clear():
     session.pop("cart", None)
     flash("Cart cleared.", "info")
     return redirect(url_for("cart"))
 
 @app.route("/checkout", methods=["GET", "POST"])
+@perm_required("shop")
 def checkout():
     items, total, count = cart_detailed()
     if not items:
@@ -703,6 +790,7 @@ def _pm_id():
 
 @app.route("/user/payment", methods=["GET", "POST"])
 @login_required
+@perm_required("payment")
 def user_payment():
     if not payment_enabled():
         flash("The payment system is currently disabled.", "warning")
@@ -758,6 +846,7 @@ def user_payment():
 
 @app.route("/order/pay/<int:oid>", methods=["GET", "POST"])
 @login_required
+@perm_required("payment")
 def order_pay(oid):
     con = db()
     if not payment_enabled():
@@ -800,6 +889,7 @@ def order_pay(oid):
 
 
 @app.route("/contact", methods=["GET", "POST"])
+@perm_required("contact")
 def contact():
     if request.method == "POST":
         name = request.form.get("name","").strip()[:100]
@@ -874,6 +964,7 @@ def admin_payment_toggle():
     return render_template("admin_payment_toggle.html", enabled=site.get("payment_enabled", True))
 
 @app.route("/apply/<int:pid>", methods=["GET", "POST"])
+@perm_required("apply")
 def apply(pid):
     job = None
     for p in get_blob("products", []):
@@ -925,7 +1016,9 @@ def register():
             users = get_blob("users", [])
             users.append({"username": username, "email": html.escape(email),
                           "pw_hash": hash_pw(pw),
-                          "created": datetime.utcnow().isoformat()})
+                          "created": datetime.utcnow().isoformat(),
+                          "status": "active",
+                          "perms": dict(DEFAULT_PERMS)})
             set_blob("users", users)
             session["user"] = {"username": username, "is_admin": False}
             flash(f"Welcome, {html.escape(username)}! 🎉", "success")
@@ -939,6 +1032,11 @@ def login():
         pw = request.form.get("password","")
         u, admin_flag = find_user_by_login(username)
         if u and check_password_hash(u.get("pw_hash",""), pw):
+            if not admin_flag:
+                st = user_status(u)
+                if st == "blocked":
+                    flash("Your account has been blocked. Please contact support.", "danger")
+                    return render_template("login.html", next=nxt, tab=request.args.get("tab",""))
             session["user"] = {"username": u["username"], "is_admin": bool(admin_flag)}
             flash(f"Welcome back, {html.escape(u['username'])}!", "success")
             return redirect(nxt if nxt.startswith("/") else url_for("index"))
@@ -959,7 +1057,11 @@ def account():
     me = (current_user() or {}).get("username","")
     orders = con.execute("SELECT * FROM orders WHERE customer_name=? ORDER BY id DESC LIMIT 50", (me,)).fetchall()
     con.close()
-    return render_template("account.html", orders=orders)
+    rec = user_record(me) or {}
+    return render_template("account.html", orders=orders,
+                           my_status=user_status(rec),
+                           my_perms=user_perms(rec),
+                           perm_labels=ACCESS_PERMS)
 
 @app.route("/myproducts", methods=["GET", "POST"])
 @login_required
@@ -973,6 +1075,9 @@ def myproducts():
     if request.method == "POST":
         act = request.form.get("action", "add")
         if act == "request_access":
+            if not has_perm("sell"):
+                flash("Seller access is not available on your account right now.", "danger")
+                return redirect(url_for("myproducts"))
             users = get_blob("users", [])
             for u in users:
                 if u.get("username") == me:
@@ -1051,7 +1156,8 @@ def myproducts():
     rec = user_record(me) or {}
     return render_template("myproducts.html", mine=mine, fee=fee,
                            categories=get_blob("categories", []),
-                           seller=can_sell(), request_status=rec.get("sell_request", ""))
+                           seller=can_sell(), request_status=rec.get("sell_request", ""),
+                           my_perms=user_perms(rec), my_status=user_status(rec))
 
 @app.route("/uploads/<path:fname>")
 def uploads(fname):
@@ -1392,8 +1498,37 @@ def admin_users():
                         u["can_sell_granted"] = datetime.utcnow().isoformat()
             set_blob("users", users)
             flash(f"Seller access {'granted 🎉' if act == 'grant' else 'revoked.'}", "success")
+        elif act == "status":
+            st = request.form.get("status", "active")
+            if st not in ACCESS_STATUSES:
+                st = "active"
+            for u in users:
+                if u.get("username") == request.form.get("username"):
+                    u["status"] = st
+                    u["status_changed"] = datetime.utcnow().isoformat()
+            set_blob("users", users)
+            flash(f"Account status set to {st}.", "success")
+        elif act == "perms":
+            target = request.form.get("username")
+            for u in users:
+                if u.get("username") == target:
+                    cur = user_perms(u)
+                    for k in ACCESS_PERMS:
+                        # checkboxes only submit when ticked
+                        cur[k] = (k in request.form)
+                    u["perms"] = cur
+                    u["perms_changed"] = datetime.utcnow().isoformat()
+            set_blob("users", users)
+            flash("Access rights updated.", "success")
+        elif act == "reset_perms":
+            for u in users:
+                if u.get("username") == request.form.get("username"):
+                    u["perms"] = dict(DEFAULT_PERMS)
+            set_blob("users", users)
+            flash("Access rights reset to default (all allowed).", "info")
         return redirect(url_for("admin_users"))
-    return render_template("admin_users.html", users=get_blob("users", []))
+    return render_template("admin_users.html", users=get_blob("users", []),
+                           statuses=ACCESS_STATUSES, perm_labels=ACCESS_PERMS)
 
 @app.route("/admin/account", methods=["GET", "POST"])
 @admin_required

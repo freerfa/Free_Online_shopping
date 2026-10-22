@@ -2,45 +2,138 @@
 {% set admin_title = "Dashboard" %}
 {% set admin_subtitle = "Store overview and key metrics" %}
 {% block admin_actions %}
-  <a class="btn small" href="/admin/products">Manage products</a>
+  <a class="adm-btn secondary sm" href="{{ url_for('admin_content') }}">Edit site content</a>
+  <a class="adm-btn sm" href="{{ url_for('admin_products') }}">Manage products</a>
 {% endblock %}
+
 {% block admin %}
-<div class="adm-paneled">
-  <nav class="adm-pane" aria-label="Dashboard">
-    <h3>Overview</h3>
-    <ul>
-      <li><a class="active" href="/admin">📊 Dashboard</a></li>
-      <li><a href="/admin/products">📦 Products</a></li>
-      <li><a href="/admin/orders">🧾 Orders</a></li>
-      <li><a href="/admin/payments">💳 Payments</a></li>
-      <li><a href="/admin/messages">✉️ Messages</a></li>
-      <li><a href="/admin/applications">📋 Applications</a></li>
-      <li><a href="/admin/listings">🏪 Marketplace</a></li>
-    </ul>
-  </nav>
-  <div class="adm-pane-body">
-    <div class="stats">
-  <div class="card stat"><b>{{ n_orders }}</b><span>Orders</span></div>
-  <div class="card stat warn"><b>{{ pending }}</b><span>Pending</span></div>
-  <div class="card stat ok"><b>{{ "{:,.0f}".format(rev) }}</b><span>Revenue ({{ site.get('currency','SSP') }})</span></div>
-  <div class="card stat"><b>{{ n_msg }}</b><span>Messages</span></div>
-  <div class="card stat warn"><b>{{ n_apps }}</b><span>Applications</span></div>
-  <div class="card stat warn"><b>{{ n_pend }}</b><span>Posts to review</span></div>
+{% from "_icons.html" import icon %}
+
+<div class="adm-kpis">
+  <a class="adm-kpi" href="{{ url_for('admin_orders') }}">
+    <span class="adm-kpi-icon">{{ icon('receipt', 'md') }}</span>
+    <span>
+      <span class="adm-kpi-label">Orders</span>
+      <span class="adm-kpi-value">{{ n_orders }}</span>
+      <span class="adm-kpi-note">All time</span>
+    </span>
+  </a>
+  <a class="adm-kpi" href="{{ url_for('admin_orders') }}">
+    <span class="adm-kpi-icon warn">{{ icon('clock', 'md') }}</span>
+    <span>
+      <span class="adm-kpi-label">Pending</span>
+      <span class="adm-kpi-value">{{ pending }}</span>
+      <span class="adm-kpi-note">Awaiting fulfilment</span>
+    </span>
+  </a>
+  <a class="adm-kpi" href="{{ url_for('admin_payments') }}">
+    <span class="adm-kpi-icon ok">{{ icon('card', 'md') }}</span>
+    <span>
+      <span class="adm-kpi-label">Revenue</span>
+      <span class="adm-kpi-value">{{ "{:,.0f}".format(rev) }}</span>
+      <span class="adm-kpi-note">{{ site.get('currency', 'SSP') }}</span>
+    </span>
+  </a>
+  <a class="adm-kpi" href="{{ url_for('admin_messages') }}">
+    <span class="adm-kpi-icon info">{{ icon('inbox', 'md') }}</span>
+    <span>
+      <span class="adm-kpi-label">Messages</span>
+      <span class="adm-kpi-value">{{ n_msg }}</span>
+      <span class="adm-kpi-note">From contact form</span>
+    </span>
+  </a>
+  <a class="adm-kpi" href="{{ url_for('admin_applications') }}">
+    <span class="adm-kpi-icon warn">{{ icon('clipboard', 'md') }}</span>
+    <span>
+      <span class="adm-kpi-label">Applications</span>
+      <span class="adm-kpi-value">{{ n_apps }}</span>
+      <span class="adm-kpi-note">Submitted</span>
+    </span>
+  </a>
+  <a class="adm-kpi" href="{{ url_for('admin_listings') }}">
+    <span class="adm-kpi-icon warn">{{ icon('store', 'md') }}</span>
+    <span>
+      <span class="adm-kpi-label">Posts to review</span>
+      <span class="adm-kpi-value">{{ n_pend }}</span>
+      <span class="adm-kpi-note">Marketplace listings</span>
+    </span>
+  </a>
 </div>
-<div class="quicklinks">
-  <a class="btn small" href="/admin/products">Manage products</a>
-  <a class="btn small" href="/admin/orders">Process orders</a>
-  <a class="btn small" href="/admin/content">Edit site content</a>
-  <a class="btn small" href="/admin/messages">Read messages</a>
-  <a class="btn small" href="/admin/applications">Review applications</a>
-  <a class="btn small" href="/admin/listings">Marketplace listings</a>
-</div>
-<div class="admcard">
-  <div class="admsection-title">Recent orders</div>
-  <table class="tbl"><tr><th>#</th><th>Customer</th><th>Total</th><th>Status</th><th>When</th></tr>
-{% for o in recent %}<tr><td>{{ o["id"] }}</td><td>{{ o["customer_name"] }}</td><td>{{ o["total"] }}</td><td><span class="pill">{{ o["status"] }}</span></td><td class="muted">{{ o["created"][:16] }}</td></tr>
-{% else %}<tr><td colspan="5" class="muted">No orders yet.</td></tr>{% endfor %}</table>
-    </div>
+
+{% if pending or n_pend or n_apps %}
+<div class="adm-alert warn mb-2">
+  {{ icon('alert', 'sm') }}
+  <div>
+    <strong>Needs your attention.</strong>
+    {% if pending %}{{ pending }} order(s) are still pending.{% endif %}
+    {% if n_pend %}{{ n_pend }} marketplace post(s) are waiting for review.{% endif %}
+    {% if n_apps %}{{ n_apps }} application(s) have been submitted.{% endif %}
   </div>
+</div>
+{% endif %}
+
+<div class="adm-grid-2">
+  <section class="adm-card">
+    <div class="adm-card-head">
+      <h3>{{ icon('receipt', 'sm') }} Recent orders</h3>
+      <a class="adm-btn ghost sm" href="{{ url_for('admin_orders') }}">View all</a>
+    </div>
+    <div class="adm-card-body flush">
+      <div class="adm-table-wrap">
+        <table class="adm-table">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Customer</th>
+              <th class="right">Total</th>
+              <th>Status</th>
+              <th class="right">When</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for o in recent %}
+            <tr>
+              <td class="num">#{{ o["id"] }}</td>
+              <td class="truncate">{{ o["customer_name"] }}</td>
+              <td class="right num">{{ o["total"] }} {{ site.get('currency', 'SSP') }}</td>
+              <td>
+                <span class="adm-badge {{ 'warn' if 'pending' in o['status'] else 'ok' }}">
+                  <span class="dot"></span>{{ o["status"] }}
+                </span>
+              </td>
+              <td class="right muted small nowrap">{{ o["created"][:16] }}</td>
+            </tr>
+            {% else %}
+            <tr>
+              <td colspan="5">
+                <div class="adm-empty">
+                  <span class="adm-empty-icon">{{ icon('receipt', 'md') }}</span>
+                  <h3>No orders yet</h3>
+                  <p>Orders placed through the storefront will appear here.</p>
+                </div>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <section class="adm-card">
+    <div class="adm-card-head">
+      <h3>{{ icon('grid', 'sm') }} Quick actions</h3>
+    </div>
+    <div class="adm-card-body">
+      <div class="stack-sm">
+        <a class="adm-btn secondary block" href="{{ url_for('admin_products') }}">{{ icon('box', 'sm') }} Manage products</a>
+        <a class="adm-btn secondary block" href="{{ url_for('admin_orders') }}">{{ icon('receipt', 'sm') }} Process orders</a>
+        <a class="adm-btn secondary block" href="{{ url_for('admin_content') }}">{{ icon('palette', 'sm') }} Edit site content</a>
+        <a class="adm-btn secondary block" href="{{ url_for('admin_messages') }}">{{ icon('inbox', 'sm') }} Read messages</a>
+        <a class="adm-btn secondary block" href="{{ url_for('admin_applications') }}">{{ icon('clipboard', 'sm') }} Review applications</a>
+        <a class="adm-btn secondary block" href="{{ url_for('admin_listings') }}">{{ icon('store', 'sm') }} Marketplace listings</a>
+      </div>
+    </div>
+  </section>
 </div>
 {% endblock %}

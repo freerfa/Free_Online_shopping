@@ -2,53 +2,80 @@
 {% set admin_title = "Applications" %}
 {% set admin_subtitle = "Job applications submitted from the Jobs pages. Open a card to read the message, view the uploaded document, change status or delete." %}
 {% block admin %}
-<div class="adm-paneled">
-  <nav class="adm-pane" aria-label="Applications">
-    <h3>Applications</h3>
-    <ul>
-      <li><a class="active" href="/admin/applications">📋 All applications</a></li>
-    </ul>
-  </nav>
-  <div class="adm-pane-body">
-    <div class="admcard">
-      <h3>Applications ({{ apps|length }})</h3>
-      {% set statcls = {'new':'', 'reviewing':'warn', 'shortlisted':'ok', 'hired':'ok', 'rejected':'bad'} %}
+{% from "_icons.html" import icon %}
+
+<section class="adm-card">
+  <div class="adm-card-head">
+    <h3>{{ icon('clipboard', 'sm') }} Applications <span class="muted small">({{ apps|length }})</span></h3>
+    <div class="adm-field" style="flex:0 1 260px">
+      <input type="search" placeholder="Filter applications…" data-filter-target="#app-list .adm-record" data-filter-empty="#app-empty" aria-label="Filter applications">
+    </div>
+  </div>
+  <div class="adm-card-body">
+    {% set statcls = {'new':'', 'reviewing':'warn', 'shortlisted':'ok', 'hired':'ok', 'rejected':'bad'} %}
+    <div id="app-list">
       {% for a in apps %}
-      <details class="card prodrow">
-  <summary>
-    <span class="pill {{ statcls.get(a.status, '') }}">{{ a.status }}</span>
-    <b>{{ a.name }}</b> — {{ a.job }}
-    <span class="muted">{{ (a.created or '')[:16] }}</span>
-  </summary>
-  <div class="appbody">
-    <p><b>Email:</b> <a href="mailto:{{ a.email }}">{{ a.email }}</a> · <b>Phone:</b> {{ a.phone or '—' }}</p>
-    <p>{{ a.message }}</p>
-    {% if a.doc %}
-    <p><a class="btn small" href="/admin/applications/{{ a.id }}/doc">📄 View / download document</a></p>
-    {% else %}<p class="muted">No document uploaded.</p>{% endif %}
-    <div class="btnrow">
-      <form method="post" class="inline">
-        <input type="hidden" name="csrf_token" value="{{ csrf }}">
-        <input type="hidden" name="aid" value="{{ a.id }}">
-        <select name="status">
-          {% for s in ['new','reviewing','shortlisted','hired','rejected'] %}
-          <option value="{{ s }}" {{ 'selected' if a.status == s }}>{{ s }}</option>
-          {% endfor %}
-        </select>
-        <button class="btn small">Update status</button>
-      </form>
-      <form method="post" onsubmit="return confirm('Delete this application and its document?')">
-        <input type="hidden" name="csrf_token" value="{{ csrf }}">
-        <input type="hidden" name="did" value="{{ a.id }}">
-        <button class="btn small danger">Delete</button>
-      </form>
+      <details class="adm-record">
+        <summary>
+          <span class="adm-badge {{ statcls.get(a.status, '') }}"><span class="dot"></span>{{ a.status }}</span>
+          <span class="adm-record-title">{{ a.name }}</span>
+          <span class="muted small truncate">{{ a.job }}</span>
+          <span class="muted small nowrap">{{ (a.created or '')[:16] }}</span>
+        </summary>
+        <div class="adm-record-body">
+          <dl class="adm-dl">
+            <dt>Email</dt><dd><a href="mailto:{{ a.email }}">{{ a.email }}</a></dd>
+            <dt>Phone</dt><dd>{{ a.phone or '—' }}</dd>
+            <dt>Job</dt><dd>{{ a.job }}</dd>
+          </dl>
+
+          <p>{{ a.message }}</p>
+
+          {% if a.doc %}
+          <a class="adm-btn secondary sm" href="{{ url_for('application_doc', aid=a.id) }}">{{ icon('download', 'sm') }} View / download document</a>
+          {% else %}
+          <p class="muted small">No document uploaded.</p>
+          {% endif %}
+
+          <div class="adm-form-actions">
+            <form method="post" class="row-tight">
+              <input type="hidden" name="csrf_token" value="{{ csrf }}">
+              <input type="hidden" name="aid" value="{{ a.id }}">
+              <div class="adm-field" style="flex:0 1 200px">
+                <label for="a{{ a.id }}-status">Status</label>
+                <select id="a{{ a.id }}-status" name="status">
+                  {% for s in ['new','reviewing','shortlisted','hired','rejected'] %}
+                  <option value="{{ s }}" {{ 'selected' if a.status == s }}>{{ s }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+              <button class="adm-btn sm" type="submit">{{ icon('check', 'sm') }} Update status</button>
+            </form>
+            <span class="spacer"></span>
+            <form method="post" onsubmit="return confirm('Delete this application and its document?')">
+              <input type="hidden" name="csrf_token" value="{{ csrf }}">
+              <input type="hidden" name="did" value="{{ a.id }}">
+              <button class="adm-btn danger-soft sm" type="submit">{{ icon('trash', 'sm') }} Delete</button>
+            </form>
+          </div>
+        </div>
+      </details>
+      {% endfor %}
     </div>
-  </div>
-</details>
-{% else %}
-<p class="muted">No applications yet. They will appear here when someone taps <b>Apply now</b> on a job.</p>
-{% endfor %}
+
+    <div class="adm-empty" id="app-empty" hidden>
+      <span class="adm-empty-icon">{{ icon('clipboard', 'md') }}</span>
+      <h3>No matching applications</h3>
+      <p>Try a different filter keyword.</p>
     </div>
+
+    {% if not apps %}
+    <div class="adm-empty">
+      <span class="adm-empty-icon">{{ icon('clipboard', 'md') }}</span>
+      <h3>No applications yet</h3>
+      <p>They will appear here when someone taps <b>Apply now</b> on a job.</p>
+    </div>
+    {% endif %}
   </div>
-</div>
+</section>
 {% endblock %}

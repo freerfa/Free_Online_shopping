@@ -8,7 +8,11 @@
   {% if not seller %}
     <h3>{{ 'myproducts.seller_required'|t }}</h3>
     <p>{{ 'myproducts.seller_required_desc'|t }}</p>
-    {% if request_status == 'pending' %}
+    {% if my_status != 'active' %}
+    <p class="muted">Your account is <b>{{ my_status }}</b>, so posting is not available. Please contact support.</p>
+    {% elif not my_perms.get('sell', true) %}
+    <p class="muted">The “sell” right is turned off on your account. Please contact support.</p>
+    {% elif request_status == 'pending' %}
     <p class="muted">{{ 'myproducts.request_pending'|t }}</p>
     {% else %}
     <form method="post">

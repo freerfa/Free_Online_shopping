@@ -2,35 +2,109 @@
 {% set admin_title = "Admin accounts" %}
 {% set admin_subtitle = "These accounts can access this panel. Passwords are stored hashed — never in plain text." %}
 {% block admin %}
-<div class="adm-paneled">
-  <nav class="adm-pane" aria-label="Settings">
-    <h3>Accounts</h3>
-    <ul>
-      <li><a class="active" href="/admin/account">👥 Admin list</a></li>
-      <li><a href="/admin/account#add">➕ Add admin</a></li>
-      <li><a href="/admin/account#email">📧 My email</a></li>
-      <li><a href="/admin/account#password">🔐 Change my password</a></li>
-    </ul>
-  </nav>
-  <div class="adm-pane-body">
-    <table class="tbl"><tr><th>Username</th><th>Email</th><th>Created</th><th></th></tr>
-    {% for a in admins %}
-    <tr><td><b>{{ a.username }}</b>{% if a.username == user.username %} <span class="pill ok">you</span>{% endif %}</td><td class="muted">{{ a.email or '—' }}</td><td class="muted">{{ (a.created or '')[:16] }}</td>
-    <td><form method="post" onsubmit="return confirm('Remove admin {{ a.username }}?')"><input type="hidden" name="csrf_token" value="{{ csrf }}"><input type="hidden" name="action" value="delete"><input type="hidden" name="username" value="{{ a.username }}"><button class="btn small danger">Remove</button></form></td></tr>
-    {% endfor %}</table>
+{% from "_icons.html" import icon %}
 
-    <div id="add" class="card admcard" style="margin-top:1rem">
-      <h3>Add admin</h3>
-      <form method="post"><input type="hidden" name="csrf_token" value="{{ csrf }}"><input type="hidden" name="action" value="add"><input name="username" placeholder="Username" required><input type="email" name="email" placeholder="Email (optional — lets you log in with it)"><input type="password" name="password" placeholder="Password (4+ characters)" required><button class="btn">Add admin</button></form>
-    </div>
-    <div id="email" class="card admcard" style="margin-top:1rem">
-      <h3>My email</h3>
-      <form method="post"><input type="hidden" name="csrf_token" value="{{ csrf }}"><input type="hidden" name="action" value="email"><input type="email" name="email" placeholder="Email for login" value="{{ me.email or '' }}"><button class="btn">Save email</button></form>
-    </div>
-    <div id="password" class="card admcard" style="margin-top:1rem">
-      <h3>Change my password</h3>
-      <form method="post"><input type="hidden" name="csrf_token" value="{{ csrf }}"><input type="hidden" name="action" value="password"><input type="password" name="password" placeholder="New password" required><button class="btn">Change password</button></form>
+<section class="adm-card mb-2">
+  <div class="adm-card-head">
+    <h3>{{ icon('shield', 'sm') }} Admin list <span class="muted small">({{ admins|length }})</span></h3>
+  </div>
+  <div class="adm-card-body flush">
+    <div class="adm-table-wrap">
+      <table class="adm-table">
+        <thead>
+          <tr><th>Username</th><th>Email</th><th>Created</th><th class="right">Action</th></tr>
+        </thead>
+        <tbody>
+          {% for a in admins %}
+          <tr>
+            <td>
+              <span class="strong">{{ a.username }}</span>
+              {% if a.username == user.username %}<span class="adm-badge ok">you</span>{% endif %}
+            </td>
+            <td class="muted">{{ a.email or '—' }}</td>
+            <td class="muted small nowrap">{{ (a.created or '')[:16] }}</td>
+            <td class="actions-cell">
+              <form method="post" onsubmit="return confirm('Remove admin {{ a.username }}?')">
+                <input type="hidden" name="csrf_token" value="{{ csrf }}">
+                <input type="hidden" name="action" value="delete">
+                <input type="hidden" name="username" value="{{ a.username }}">
+                <button class="adm-btn danger-soft sm" type="submit">{{ icon('trash', 'sm') }} Remove</button>
+              </form>
+            </td>
+          </tr>
+          {% else %}
+          <tr><td colspan="4">
+            <div class="adm-empty">
+              <span class="adm-empty-icon">{{ icon('shield', 'md') }}</span>
+              <h3>No admin accounts</h3>
+              <p>Add an admin below to give someone else access to this panel.</p>
+            </div>
+          </td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
     </div>
   </div>
+</section>
+
+<div class="adm-grid-3">
+  <section class="adm-card" id="add">
+    <div class="adm-card-head"><h3>{{ icon('plus', 'sm') }} Add admin</h3></div>
+    <div class="adm-card-body">
+      <form method="post" class="adm-form">
+        <input type="hidden" name="csrf_token" value="{{ csrf }}">
+        <input type="hidden" name="action" value="add">
+        <div class="adm-field">
+          <label for="ad-username">Username</label>
+          <input id="ad-username" name="username" placeholder="Username" required>
+        </div>
+        <div class="adm-field">
+          <label for="ad-email">Email <span class="muted">(optional)</span></label>
+          <input id="ad-email" type="email" name="email" placeholder="Email (optional — lets you log in with it)">
+        </div>
+        <div class="adm-field">
+          <label for="ad-password">Password</label>
+          <input id="ad-password" type="password" name="password" placeholder="Password (4+ characters)" required>
+        </div>
+        <div class="adm-form-actions">
+          <button class="adm-btn" type="submit">{{ icon('plus', 'sm') }} Add admin</button>
+        </div>
+      </form>
+    </div>
+  </section>
+
+  <section class="adm-card" id="email">
+    <div class="adm-card-head"><h3>{{ icon('mail', 'sm') }} My email</h3></div>
+    <div class="adm-card-body">
+      <form method="post" class="adm-form">
+        <input type="hidden" name="csrf_token" value="{{ csrf }}">
+        <input type="hidden" name="action" value="email">
+        <div class="adm-field">
+          <label for="me-email">Email for login</label>
+          <input id="me-email" type="email" name="email" placeholder="Email for login" value="{{ me.email or '' }}">
+        </div>
+        <div class="adm-form-actions">
+          <button class="adm-btn" type="submit">{{ icon('check', 'sm') }} Save email</button>
+        </div>
+      </form>
+    </div>
+  </section>
+
+  <section class="adm-card" id="password">
+    <div class="adm-card-head"><h3>{{ icon('shield', 'sm') }} Change my password</h3></div>
+    <div class="adm-card-body">
+      <form method="post" class="adm-form">
+        <input type="hidden" name="csrf_token" value="{{ csrf }}">
+        <input type="hidden" name="action" value="password">
+        <div class="adm-field">
+          <label for="me-password">New password</label>
+          <input id="me-password" type="password" name="password" placeholder="New password" required>
+        </div>
+        <div class="adm-form-actions">
+          <button class="adm-btn" type="submit">{{ icon('check', 'sm') }} Change password</button>
+        </div>
+      </form>
+    </div>
+  </section>
 </div>
 {% endblock %}

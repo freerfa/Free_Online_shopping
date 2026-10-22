@@ -2,107 +2,192 @@
 {% set admin_title = "Products" %}
 {% set admin_subtitle = "Add, edit, and manage products in your store catalog." %}
 {% block admin_actions %}
-  <a class="btn" href="/admin/products?action=add">Add product</a>
+  <a class="adm-btn sm" href="{{ url_for('admin_products', action='add') }}">{{ icon('plus', 'sm') }} Add product</a>
 {% endblock %}
 {% block admin %}
-<div class="adm-paneled">
-  <nav class="adm-pane" aria-label="Products">
-    <h3>Catalog</h3>
-    <ul>
-      <li><a class="active" href="/admin/products">📦 All products</a></li>
-    </ul>
-  </nav>
-  <div class="adm-pane-body">
-    <div class="admcard">
-      <div class="admsection-title">Add new product</div>
-  <details class="card addbox" {% if not products %}open{% endif %}>
-    <summary><b>+ Add new product</b></summary>
-    <form method="post" enctype="multipart/form-data">
-      <input type="hidden" name="csrf_token" value="{{ csrf }}">
-      <input type="hidden" name="action" value="add">
-      <div class="frow">
-        <input name="name" placeholder="Product name" required>
-        <input name="category" placeholder="Category id (e.g. phones)" list="catlist" required>
-        <input name="price" placeholder="Price" type="number" step="0.01" required>
-        <input name="old_price" placeholder="Old price (optional)" type="number" step="0.01">
-        <input name="stock" placeholder="Stock" type="number" min="0" value="10">
-        <input name="badge" placeholder="Badge (Hot / Sale / New)">
-      </div>
-      <textarea name="desc" placeholder="Description"></textarea>
-      <input type="file" name="images" accept="image/png,image/jpeg,image/webp,image/gif" multiple>
-      <small class="muted">Photos — hold ⌘ (Mac) / Ctrl (Windows) to select several. First photo = main image.</small>
-      <div class="btnrow"><button class="btn">Add product</button></div>
-    </form>
+{% from "_icons.html" import icon %}
+
+<section class="adm-card mb-2">
+  <details class="adm-record" {% if not products %}open{% endif %}>
+    <summary>
+      {{ icon('plus', 'sm') }}
+      <span class="adm-record-title">Add new product</span>
+      <span class="muted small">Name, category, price and photos</span>
+    </summary>
+    <div class="adm-record-body">
+      <form method="post" enctype="multipart/form-data" class="adm-form">
+        <input type="hidden" name="csrf_token" value="{{ csrf }}">
+        <input type="hidden" name="action" value="add">
+        <div class="adm-form-row">
+          <div class="adm-field">
+            <label for="np-name">Product name</label>
+            <input id="np-name" name="name" placeholder="Product name" required>
+          </div>
+          <div class="adm-field">
+            <label for="np-cat">Category</label>
+            <input id="np-cat" name="category" placeholder="Category id (e.g. phones)" list="catlist" required>
+          </div>
+          <div class="adm-field">
+            <label for="np-price">Price</label>
+            <input id="np-price" name="price" placeholder="Price" type="number" step="0.01" required>
+          </div>
+          <div class="adm-field">
+            <label for="np-old">Old price <span class="muted">(optional)</span></label>
+            <input id="np-old" name="old_price" placeholder="Old price (optional)" type="number" step="0.01">
+          </div>
+          <div class="adm-field">
+            <label for="np-stock">Stock</label>
+            <input id="np-stock" name="stock" placeholder="Stock" type="number" min="0" value="10">
+          </div>
+          <div class="adm-field">
+            <label for="np-badge">Badge</label>
+            <input id="np-badge" name="badge" placeholder="Badge (Hot / Sale / New)">
+          </div>
+        </div>
+        <div class="adm-field">
+          <label for="np-desc">Description</label>
+          <textarea id="np-desc" name="desc" placeholder="Description"></textarea>
+        </div>
+        <div class="adm-field">
+          <label for="np-imgs">Photos</label>
+          <input id="np-imgs" type="file" name="images" accept="image/png,image/jpeg,image/webp,image/gif" multiple>
+          <span class="hint">Hold ⌘ (Mac) / Ctrl (Windows) to select several. First photo = main image.</span>
+        </div>
+        <div class="adm-form-actions">
+          <button class="adm-btn" type="submit">{{ icon('plus', 'sm') }} Add product</button>
+        </div>
+      </form>
+    </div>
   </details>
   <datalist id="catlist">{% for c in categories %}<option value="{{ c.id }}">{{ c.name }}</option>{% endfor %}</datalist>
-</div>
+</section>
 
-{% for p in products %}
-<div class="admcard prodrow">
-  <details>
-    <summary>
-      {% if p.image %}<img class="thumb" src="{{ p.image }}" alt="">{% else %}<span class="thumb placeholder">📦</span>{% endif %}
-      <b>{{ p.name }}</b> <span class="muted">({{ p.category }})</span>
-      <span class="price">{{ site.get('currency','SSP') }} {{ "{:,.0f}".format(p.price) }}</span>
-      <span class="pill {{ 'warn' if p.stock == 0 else ('ok' if p.stock > 10 else '') }}">stock {{ p.stock }}</span>
-      {% if p.badge %}<span class="pill">{{ p.badge }}</span>{% endif %}
-    </summary>
-    <form method="post" enctype="multipart/form-data">
-      <input type="hidden" name="csrf_token" value="{{ csrf }}">
-      <input type="hidden" name="action" value="edit">
-      <input type="hidden" name="pid" value="{{ p.id }}">
-      {% set imgs = p.get('images') or ([p.image] if p.image else []) %}
-      <input type="hidden" name="existing_images" value="{{ imgs|tojson }}">
-      <div class="frow">
-        <input name="name" value="{{ p.name }}" required>
-        <input name="category" value="{{ p.category }}" list="catlist">
-        <input name="price" value="{{ p.price }}" type="number" step="0.01">
-        <input name="old_price" value="{{ p.old_price }}" type="number" step="0.01">
-        <input name="stock" value="{{ p.stock }}" type="number" min="0">
-        <input name="badge" value="{{ p.badge }}" placeholder="Badge">
-      </div>
-      <textarea name="desc">{{ p.desc }}</textarea>
-      <input type="file" name="images" accept="image/png,image/jpeg,image/webp,image/gif" multiple>
-      <small class="muted">Add more photos ({{ imgs|length }} current). First photo is the main image.</small>
-      <div class="btnrow"><button class="btn">Save changes</button></div>
-    </form>
-    <form method="post" onsubmit="return confirm('Delete {{ p.name }}?')" style="margin-top:.5rem">
-      <input type="hidden" name="csrf_token" value="{{ csrf }}">
-      <input type="hidden" name="action" value="delete">
-      <input type="hidden" name="pid" value="{{ p.id }}">
-      <button class="btn danger">Delete</button>
-    </form>
-    {% if imgs %}
-    <div class="admsection-title" style="margin-top:1rem">Product photos</div>
-    <div class="imgrow">
-      {% for im in imgs %}
-      <div class="imgthumb">
-        <img src="{{ im }}" alt="">
-        {% if im == p.image %}<span class="pill ok">main</span>{% endif %}
-        <div class="btnrow" style="margin-top:.4rem">
-          <form method="post">
-            <input type="hidden" name="csrf_token" value="{{ csrf }}">
-            <input type="hidden" name="action" value="img_primary">
-            <input type="hidden" name="pid" value="{{ p.id }}">
-            <input type="hidden" name="img_url" value="{{ im }}">
-            <button class="btn small ghost" title="Make main photo">⭐</button>
-          </form>
-          <form method="post" onsubmit="return confirm('Remove this photo?')">
-            <input type="hidden" name="csrf_token" value="{{ csrf }}">
-            <input type="hidden" name="action" value="img_delete">
-            <input type="hidden" name="pid" value="{{ p.id }}">
-            <input type="hidden" name="img_url" value="{{ im }}">
-            <button class="btn small danger" title="Remove photo">✕</button>
-          </form>
-        </div>
-      </div>
-      {% endfor %}
-    </div>
-    {% endif %}
-  </details>
-</div>
-{% endfor %}
+<section class="adm-card">
+  <div class="adm-card-head">
+    <h3>{{ icon('box', 'sm') }} Products <span class="muted small">({{ products|length }})</span></h3>
+    <div class="adm-field" style="flex:0 1 260px">
+      <input type="search" placeholder="Filter products…" data-filter-target="#prod-list .adm-record" data-filter-empty="#prod-empty" aria-label="Filter products">
     </div>
   </div>
-</div>
+  <div class="adm-card-body">
+    <div id="prod-list">
+      {% for p in products %}
+      <details class="adm-record">
+        <summary>
+          {% if p.image %}
+            <img class="adm-thumb" src="{{ p.image }}" alt="">
+          {% else %}
+            <span class="adm-thumb placeholder">{{ icon('box', 'md') }}</span>
+          {% endif %}
+          <span class="adm-record-title">{{ p.name }}</span>
+          <span class="muted small">({{ p.category }})</span>
+          <span class="strong num">{{ site.get('currency','SSP') }} {{ "{:,.0f}".format(p.price) }}</span>
+          <span class="adm-badge {{ 'bad' if p.stock == 0 else ('warn' if p.stock <= 10 else 'ok') }}">
+            <span class="dot"></span>stock {{ p.stock }}
+          </span>
+          {% if p.badge %}<span class="adm-badge brand">{{ p.badge }}</span>{% endif %}
+        </summary>
+        <div class="adm-record-body">
+          <form method="post" enctype="multipart/form-data" class="adm-form">
+            <input type="hidden" name="csrf_token" value="{{ csrf }}">
+            <input type="hidden" name="action" value="edit">
+            <input type="hidden" name="pid" value="{{ p.id }}">
+            {% set imgs = p.get('images') or ([p.image] if p.image else []) %}
+            <input type="hidden" name="existing_images" value="{{ imgs|tojson }}">
+            <div class="adm-form-row">
+              <div class="adm-field">
+                <label for="p{{ p.id }}-name">Name</label>
+                <input id="p{{ p.id }}-name" name="name" value="{{ p.name }}" required>
+              </div>
+              <div class="adm-field">
+                <label for="p{{ p.id }}-cat">Category</label>
+                <input id="p{{ p.id }}-cat" name="category" value="{{ p.category }}" list="catlist">
+              </div>
+              <div class="adm-field">
+                <label for="p{{ p.id }}-price">Price</label>
+                <input id="p{{ p.id }}-price" name="price" value="{{ p.price }}" type="number" step="0.01">
+              </div>
+              <div class="adm-field">
+                <label for="p{{ p.id }}-old">Old price</label>
+                <input id="p{{ p.id }}-old" name="old_price" value="{{ p.old_price }}" type="number" step="0.01">
+              </div>
+              <div class="adm-field">
+                <label for="p{{ p.id }}-stock">Stock</label>
+                <input id="p{{ p.id }}-stock" name="stock" value="{{ p.stock }}" type="number" min="0">
+              </div>
+              <div class="adm-field">
+                <label for="p{{ p.id }}-badge">Badge</label>
+                <input id="p{{ p.id }}-badge" name="badge" value="{{ p.badge }}" placeholder="Badge">
+              </div>
+            </div>
+            <div class="adm-field">
+              <label for="p{{ p.id }}-desc">Description</label>
+              <textarea id="p{{ p.id }}-desc" name="desc">{{ p.desc }}</textarea>
+            </div>
+            <div class="adm-field">
+              <label for="p{{ p.id }}-imgs">Add more photos</label>
+              <input id="p{{ p.id }}-imgs" type="file" name="images" accept="image/png,image/jpeg,image/webp,image/gif" multiple>
+              <span class="hint">{{ imgs|length }} current. First photo is the main image.</span>
+            </div>
+            <div class="adm-form-actions">
+              <button class="adm-btn" type="submit">{{ icon('check', 'sm') }} Save changes</button>
+            </div>
+          </form>
+
+          {% if imgs %}
+          <div>
+            <div class="adm-label mb-1">Product photos</div>
+            <div class="adm-imgrow">
+              {% for im in imgs %}
+              <div class="adm-imgthumb">
+                <img src="{{ im }}" alt="">
+                {% if im == p.image %}<span class="adm-badge ok tag">main</span>{% endif %}
+                <div class="ops">
+                  <form method="post">
+                    <input type="hidden" name="csrf_token" value="{{ csrf }}">
+                    <input type="hidden" name="action" value="img_primary">
+                    <input type="hidden" name="pid" value="{{ p.id }}">
+                    <input type="hidden" name="img_url" value="{{ im }}">
+                    <button class="adm-btn ghost sm" title="Make main photo" type="submit">{{ icon('star', 'sm') }}</button>
+                  </form>
+                  <form method="post" onsubmit="return confirm('Remove this photo?')">
+                    <input type="hidden" name="csrf_token" value="{{ csrf }}">
+                    <input type="hidden" name="action" value="img_delete">
+                    <input type="hidden" name="pid" value="{{ p.id }}">
+                    <input type="hidden" name="img_url" value="{{ im }}">
+                    <button class="adm-btn danger-soft sm" title="Remove photo" type="submit">{{ icon('trash', 'sm') }}</button>
+                  </form>
+                </div>
+              </div>
+              {% endfor %}
+            </div>
+          </div>
+          {% endif %}
+
+          <form method="post" onsubmit="return confirm('Delete {{ p.name }}?')">
+            <input type="hidden" name="csrf_token" value="{{ csrf }}">
+            <input type="hidden" name="action" value="delete">
+            <input type="hidden" name="pid" value="{{ p.id }}">
+            <button class="adm-btn danger-soft" type="submit">{{ icon('trash', 'sm') }} Delete product</button>
+          </form>
+        </div>
+      </details>
+      {% endfor %}
+    </div>
+
+    <div class="adm-empty" id="prod-empty" hidden>
+      <span class="adm-empty-icon">{{ icon('box', 'md') }}</span>
+      <h3>No products found</h3>
+      <p>Try a different filter, or add a new product using the form above.</p>
+    </div>
+
+    {% if not products %}
+    <div class="adm-empty">
+      <span class="adm-empty-icon">{{ icon('box', 'md') }}</span>
+      <h3>No products yet</h3>
+      <p>Add your first product using the form above — it will appear in the storefront immediately.</p>
+    </div>
+    {% endif %}
+  </div>
+</section>
 {% endblock %}

@@ -2,75 +2,135 @@
 {% set admin_title = "Users" %}
 {% set admin_subtitle = "Customer accounts registered on the store. Grant the seller right to let an account post products in the marketplace. Use Access rights to change an account's status and the features it may use. Removing a user here does not delete their orders." %}
 {% block admin_actions %}
-  <a class="btn" href="/admin/users?action=invite">Invite user</a>
+  <a class="adm-btn sm" href="{{ url_for('admin_users', action='invite') }}">{{ icon('plus', 'sm') }} Invite user</a>
 {% endblock %}
 {% block admin %}
-<div class="adm-paneled">
-  <nav class="adm-pane" aria-label="Users">
-    <h3>Accounts</h3>
-    <ul>
-      <li><a class="active" href="/admin/users">👥 All users</a></li>
-    </ul>
-  </nav>
-  <div class="adm-pane-body">
-    <div class="admcard">
-      <table class="tbl"><tr><th>Username</th><th>Email</th><th>Joined</th><th>Seller access</th><th>Status</th><th>Access rights</th><th></th></tr>
-{% for u in users %}
-{% set perms = u.get('perms') or {} %}
-{% set st = u.get('status') or 'active' %}
-<tr><td><b>{{ u.username }}</b></td><td>{{ u.email or '—' }}</td><td class="muted">{{ (u.created or '')[:16] }}</td>
-<td>
-  {% if u.can_sell %}<span class="pill ok">granted</span>
-  {% elif u.sell_request == 'pending' %}<span class="pill warn">requested</span>
-  {% else %}<span class="muted">—</span>{% endif %}
-  <form method="post" class="inline" style="margin-top:.4rem">
-    <input type="hidden" name="csrf_token" value="{{ csrf }}">
-    <input type="hidden" name="username" value="{{ u.username }}">
-    {% if u.can_sell %}
-    <input type="hidden" name="action" value="revoke"><button class="btn small ghost">Revoke</button>
-    {% else %}
-    <input type="hidden" name="action" value="grant"><button class="btn small">{{ 'Approve' if u.sell_request == 'pending' else 'Grant' }}</button>
-    {% endif %}
-  </form>
-</td>
-<td>
-  <form method="post" class="inline" style="margin-top:.4rem">
-    <input type="hidden" name="csrf_token" value="{{ csrf }}">
-    <input type="hidden" name="action" value="status">
-    <input type="hidden" name="username" value="{{ u.username }}">
-    <select name="status" onchange="this.form.submit()" aria-label="Status for {{ u.username }}">
-      {% for s in statuses %}
-      <option value="{{ s }}" {{ 'selected' if st == s }}>{{ s }}</option>
-      {% endfor %}
-    </select>
-  </form>
-  {% if st != 'active' %}<span class="pill {{ 'bad' if st == 'blocked' else 'warn' }}">{{ st }}</span>{% endif %}
-</td>
-<td class="rights">
-  <details class="formsection">
-    <summary class="muted">Manage rights ({{ perm_labels|length }} total)</summary>
-    <form method="post">
-      <input type="hidden" name="csrf_token" value="{{ csrf }}">
-      <input type="hidden" name="action" value="perms">
-      <input type="hidden" name="username" value="{{ u.username }}">
-      {% for key, label in perm_labels.items() %}
-      <label class="inline"><input type="checkbox" name="{{ key }}" value="1" {{ 'checked' if perms.get(key, true) }}> {{ label }}</label><br>
-      {% endfor %}
-      <div class="btnrow">
-        <button class="btn small">Save rights</button>
-      </div>
-    </form>
-    <form method="post" style="margin-top:.5rem">
-      <input type="hidden" name="csrf_token" value="{{ csrf }}">
-      <input type="hidden" name="action" value="reset_perms">
-      <input type="hidden" name="username" value="{{ u.username }}">
-      <button class="btn small ghost">Reset to default</button>
-    </form>
-  </details>
-</td>
-<td><form method="post" onsubmit="return confirm('Remove {{ u.username }}?')"><input type="hidden" name="csrf_token" value="{{ csrf }}"><input type="hidden" name="action" value="delete"><input type="hidden" name="username" value="{{ u.username }}"><button class="btn small danger">Remove</button></form></td></tr>
-{% else %}<tr><td colspan="7" class="muted">No users yet.</td></tr>{% endfor %}</table>
+{% from "_icons.html" import icon %}
+
+<section class="adm-card">
+  <div class="adm-card-head">
+    <h3>{{ icon('users', 'sm') }} Accounts <span class="muted small">({{ users|length }})</span></h3>
+    <div class="adm-field" style="flex:0 1 260px">
+      <input type="search" placeholder="Filter users…" data-filter-target="#user-list .adm-record" data-filter-empty="#user-empty" aria-label="Filter users">
     </div>
   </div>
-</div>
+  <div class="adm-card-body">
+    <div id="user-list">
+      {% for u in users %}
+      {% set perms = u.get('perms') or {} %}
+      {% set st = u.get('status') or 'active' %}
+      <details class="adm-record">
+        <summary>
+          <span class="adm-record-title">{{ u.username }}</span>
+          <span class="muted small truncate">{{ u.email or '—' }}</span>
+          {% if u.can_sell %}
+            <span class="adm-badge ok"><span class="dot"></span>seller</span>
+          {% elif u.sell_request == 'pending' %}
+            <span class="adm-badge warn"><span class="dot"></span>requested</span>
+          {% endif %}
+          <span class="adm-badge {{ 'bad' if st == 'blocked' else ('warn' if st != 'active' else '') }}">{{ st }}</span>
+          <span class="muted small nowrap">{{ (u.created or '')[:16] }}</span>
+        </summary>
+        <div class="adm-record-body">
+          <div class="adm-grid-2">
+            <div class="stack-sm">
+              <div class="adm-label">Seller access</div>
+              <div class="row">
+                {% if u.can_sell %}
+                <span class="adm-badge ok"><span class="dot"></span>granted</span>
+                {% elif u.sell_request == 'pending' %}
+                <span class="adm-badge warn"><span class="dot"></span>requested</span>
+                {% else %}
+                <span class="muted">—</span>
+                {% endif %}
+              </div>
+              <form method="post" class="row-tight">
+                <input type="hidden" name="csrf_token" value="{{ csrf }}">
+                <input type="hidden" name="username" value="{{ u.username }}">
+                {% if u.can_sell %}
+                <input type="hidden" name="action" value="revoke">
+                <button class="adm-btn ghost sm" type="submit">Revoke</button>
+                {% else %}
+                <input type="hidden" name="action" value="grant">
+                <button class="adm-btn sm" type="submit">{{ 'Approve' if u.sell_request == 'pending' else 'Grant' }}</button>
+                {% endif %}
+              </form>
+            </div>
+
+            <div class="stack-sm">
+              <div class="adm-label">Account status</div>
+              <form method="post" class="row-tight">
+                <input type="hidden" name="csrf_token" value="{{ csrf }}">
+                <input type="hidden" name="action" value="status">
+                <input type="hidden" name="username" value="{{ u.username }}">
+                <select name="status" onchange="this.form.submit()" aria-label="Status for {{ u.username }}">
+                  {% for s in statuses %}
+                  <option value="{{ s }}" {{ 'selected' if st == s }}>{{ s }}</option>
+                  {% endfor %}
+                </select>
+              </form>
+              {% if st != 'active' %}
+              <span class="adm-badge {{ 'bad' if st == 'blocked' else 'warn' }}">{{ st }}</span>
+              {% endif %}
+            </div>
+          </div>
+
+          <details class="adm-record" style="box-shadow:none">
+            <summary>
+              {{ icon('shield', 'sm') }}
+              <span class="adm-record-title">Access rights</span>
+              <span class="muted small">({{ perm_labels|length }} total)</span>
+            </summary>
+            <div class="adm-record-body">
+              <form method="post" class="adm-form">
+                <input type="hidden" name="csrf_token" value="{{ csrf }}">
+                <input type="hidden" name="action" value="perms">
+                <input type="hidden" name="username" value="{{ u.username }}">
+                <div class="stack-sm">
+                  {% for key, label in perm_labels.items() %}
+                  <label class="adm-check">
+                    <input type="checkbox" name="{{ key }}" value="1" {{ 'checked' if perms.get(key, true) }}>
+                    <span>{{ label }}</span>
+                  </label>
+                  {% endfor %}
+                </div>
+                <div class="adm-form-actions">
+                  <button class="adm-btn sm" type="submit">{{ icon('check', 'sm') }} Save rights</button>
+                </div>
+              </form>
+              <form method="post">
+                <input type="hidden" name="csrf_token" value="{{ csrf }}">
+                <input type="hidden" name="action" value="reset_perms">
+                <input type="hidden" name="username" value="{{ u.username }}">
+                <button class="adm-btn ghost sm" type="submit">Reset to default</button>
+              </form>
+            </div>
+          </details>
+
+          <form method="post" onsubmit="return confirm('Remove {{ u.username }}?')">
+            <input type="hidden" name="csrf_token" value="{{ csrf }}">
+            <input type="hidden" name="action" value="delete">
+            <input type="hidden" name="username" value="{{ u.username }}">
+            <button class="adm-btn danger-soft sm" type="submit">{{ icon('trash', 'sm') }} Remove user</button>
+          </form>
+        </div>
+      </details>
+      {% endfor %}
+    </div>
+
+    <div class="adm-empty" id="user-empty" hidden>
+      <span class="adm-empty-icon">{{ icon('users', 'md') }}</span>
+      <h3>No matching users</h3>
+      <p>Try a different filter keyword.</p>
+    </div>
+
+    {% if not users %}
+    <div class="adm-empty">
+      <span class="adm-empty-icon">{{ icon('users', 'md') }}</span>
+      <h3>No users yet</h3>
+      <p>Customer accounts registered on the store will appear here.</p>
+    </div>
+    {% endif %}
+  </div>
+</section>
 {% endblock %}

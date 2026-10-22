@@ -9,34 +9,47 @@
 </head>
 <body>
 {% if site.get('announcement') %}<div class="announce mq" aria-label="Announcement"><div class="mq-track slow">{% for i in range(3) %}<span class="mq-seq">{% for j in range(3) %}<span>{{ site.announcement }}</span><span>✦</span>{% endfor %}</span>{% endfor %}</div></div>{% endif %}
-<header class="nav">
-    <a href="{{ url_for('index') }}">{{ 'nav.home'|t }}</a>
-    <a href="{{ url_for('shop') }}">{{ 'nav.shop'|t }}</a>
-    <a href="{{ url_for('contact') }}">{{ 'nav.contact'|t }}</a>
-    {% if user %}
-      {% if not is_admin %}<a href="{{ url_for('myproducts') }}">{{ 'nav.my_products'|t }}</a>{% endif %}
-      <a href="{{ url_for('account') }}">{{ 'nav.account_hi'|t(user=user.username) }}</a>
-      <a href="{{ url_for('user_payment') }}">{{ 'nav.payment'|t }}</a>
-      <a href="{{ url_for('logout') }}">{{ 'nav.logout'|t }}</a>
-      {% if is_admin %}<a class="adminlink" href="{{ url_for('admin_dash') }}">{{ 'nav.admin'|t }}</a>{% endif %}
-    {% else %}
-      <a class="btn small" href="{{ url_for('login') }}">{{ 'nav.login_signup'|t }}</a>
-    {% endif %}
-    <a class="cartlink" href="{{ url_for('cart') }}">{{ 'nav.cart'|t(count=cart_count) }}</a>
-    <div class="nav-actions">
-      <form method="get" class="currency-select" action="{{ request.full_path }}">
-        <select name="currency" id="currency" aria-label="Select currency" onchange="this.form.submit()">
+<header class="nav" role="banner">
+  <div class="nav-inner">
+    <a class="logo" href="{{ url_for('index') }}" aria-label="Home">
+      <span class="logo-mark">🛍️</span><span class="logo-text">{{ site.get('name','Free Online Shopping') }}</span>
+    </a>
+
+    <nav class="links" aria-label="Main navigation">
+      <a class="{{ 'active' if request.path == '/' }}" href="{{ url_for('index') }}">{{ 'nav.home'|t }}</a>
+      <a class="{{ 'active' if request.path.startswith('/shop') }}" href="{{ url_for('shop') }}">{{ 'nav.shop'|t }}</a>
+      <a class="{{ 'active' if request.path == '/contact' }}" href="{{ url_for('contact') }}">{{ 'nav.contact'|t }}</a>
+    </nav>
+
+    <div class="user-actions">
+      {% if user %}
+        {% if not is_admin %}<a class="chip" href="{{ url_for('myproducts') }}">{{ 'nav.my_products'|t }}</a>{% endif %}
+        {% if is_admin %}<a class="chip adminlink" href="{{ url_for('admin_dash') }}">{{ 'nav.admin'|t }}</a>{% endif %}
+        <a class="btn outline small" href="{{ url_for('logout') }}">{{ 'nav.logout'|t }}</a>
+      {% else %}
+        <a class="btn" href="{{ url_for('login') }}">{{ 'nav.login_signup'|t }}</a>
+      {% endif %}
+      <a class="cartlink chip" href="{{ url_for('cart') }}" aria-label="{{ 'nav.cart'|t(count=cart_count) }}">
+        {{ 'nav.cart'|t(count=cart_count) }}
+        {% if cart_count %}<span class="cart-badge">{{ cart_count }}</span>{% endif %}
+      </a>
+    </div>
+
+    <div class="nav-controls">
+      <form method="get" class="currency-select" action="{{ request.full_path }}" aria-label="Select currency">
+        <select name="currency" id="currency" onchange="this.form.submit()">
           {% for c in currencies %}<option value="{{ c.code }}" {{ 'selected' if currency == c.code }}>{{ c.symbol }} {{ c.name }}</option>{% endfor %}
         </select>
       </form>
-      <form method="get" class="language-select" action="{{ request.full_path }}">
-        <select name="language" id="language" aria-label="Select language" onchange="this.form.submit()">
+      <form method="get" class="language-select" action="{{ request.full_path }}" aria-label="Select language">
+        <select name="language" id="language" onchange="this.form.submit()">
           {% for code, lang in languages.items() %}<option value="{{ code }}" {{ 'selected' if language == code }}>{{ lang.name }}</option>{% endfor %}
         </select>
       </form>
+      <button class="themetoggle" onclick="toggleTheme()" title="{{ 'nav.theme_toggle'|t }}" aria-label="{{ 'nav.theme_toggle'|t }}">◐</button>
+      <button class="mobile-menu" aria-label="Toggle menu" aria-expanded="false">☰</button>
     </div>
-    <button class="themetoggle" onclick="toggleTheme()" title="{{ 'nav.theme_toggle'|t }}">◐</button>
-  </nav>
+  </div>
 </header>
 {% with msgs = get_flashed_messages(with_categories=true) %}
 {% if msgs %}<div class="flashwrap">{% for cat,msg in msgs %}<div class="flash {{ cat }}">{{ msg }}</div>{% endfor %}</div>{% endif %}

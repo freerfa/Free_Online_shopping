@@ -1,36 +1,97 @@
-{% extends "admin_base.html" %}{% set admin_title = "Orders" %}{% set admin_subtitle = "Customer orders placed through the store. Verify payments and update fulfillment status." %}{% block admin %}
-<div class="adm-paneled">
-  <nav class="adm-pane" aria-label="Orders">
-    <h3>Orders</h3>
-    <ul>
-      <li><a class="active" href="/admin/orders">🧾 All orders</a></li>
-    </ul>
-  </nav>
-  <div class="adm-pane-body">
-    <div class="admcard">
-      <h3>🧾 Orders ({{ orders|length }})</h3>
-      {% for o in orders %}
-      <details class="card prodrow">
-  <summary><b>#{{ o["id"] }}</b> {{ o["customer_name"] }} — {{ o["total"] }} {{ site.get('currency','SSP') }} <span class="pill {{ 'warn' if 'pending' in o['status'] else 'ok' }}">{{ o["status"] }}</span> <span class="pill {{ 'ok' if o['payment_status']=='paid' else 'warn' if o['payment_status']=='pending' else 'bad' }}">{{ o["payment_method"] or '—' }} / {{ o["payment_status"] or 'pending' }}</span></summary>
-  <p class="muted">📞 {{ o["phone"] }} {% if o["email"] %}· ✉️ {{ o["email"] }}{% endif %}<br>📍 {{ o["address"] }}, {{ o["city"] }}<br>🕒 {{ o["created" ] }}{% if o["notes"] %}<br>📝 {{ o["notes"] }}{% endif %}{% if o["receipt_path"] %}<br>🧾 <a href="{{ url_for('uploads', fname=o['receipt_path']) }}" target="_blank">Payment receipt</a>{% if o["payment_status"]=="paid" and o["paid_at"] %}<br>✅ Paid at: {{ o["paid_at"] }}{% endif %}{% endif %}</p>
-  <ul>{% for it in json.loads(o["items_json"]) %}<li>{{ it.product.name }} × {{ it.qty }} = {{ it.line }}</li>{% endfor %}</ul>
-  <form method="post" class="inline">
-    <input type="hidden" name="csrf_token" value="{{ csrf }}">
-    <input type="hidden" name="oid" value="{{ o["id"] }}">
-    <input type="hidden" name="action" value="verify_payment">
-    {% if o["payment_status"] == 'pending' %}
-    <button class="btn small ghost">✅ Verify Payment</button>
-    {% elif o["payment_status"] == 'paid' %}
-    <input type="hidden" name="action" value="reject_payment"><button class="btn small ghost">❌ Reject Payment</button>
-    {% else %}<span class="muted small">Payment: {{ o["payment_status"] }}</span>{% endif %}
-    <select name="status">
-      {% for s in ['pending','confirmed','packed','shipped','delivered','cancelled'] %}<option {{ 'selected' if s == o['status'].split(' — ')[0] else '' }}>{{ s }}</option>{% endfor %}
-    </select>
-    <button class="btn small">Update Order</button>
-  </form>
-</details>
-{% else %}<p class="muted">No orders yet.</p>{% endfor %}
+{% extends "admin_base.html" %}
+{% set admin_title = "Orders" %}
+{% set admin_subtitle = "Customer orders placed through the store. Verify payments and update fulfillment status." %}
+{% block admin %}
+{% from "_icons.html" import icon %}
+
+<section class="adm-card">
+  <div class="adm-card-head">
+    <h3>{{ icon('receipt', 'sm') }} Orders <span class="muted small">({{ orders|length }})</span></h3>
+    <div class="adm-field" style="flex:0 1 260px">
+      <input type="search" placeholder="Filter orders…" data-filter-target="#order-list .adm-record" data-filter-empty="#order-empty" aria-label="Filter orders">
     </div>
   </div>
-</div>
+  <div class="adm-card-body">
+    <div id="order-list">
+      {% for o in orders %}
+      <details class="adm-record">
+        <summary>
+          <span class="adm-record-title">#{{ o["id"] }}</span>
+          <span class="truncate">{{ o["customer_name"] }}</span>
+          <span class="strong num">{{ o["total"] }} {{ site.get('currency','SSP') }}</span>
+          <span class="adm-badge {{ 'warn' if 'pending' in o['status'] else 'ok' }}"><span class="dot"></span>{{ o["status"] }}</span>
+          <span class="adm-badge {{ 'ok' if o['payment_status']=='paid' else 'warn' if o['payment_status']=='pending' else 'bad' }}">
+            {{ o["payment_method"] or '—' }} / {{ o["payment_status"] or 'pending' }}
+          </span>
+        </summary>
+        <div class="adm-record-body">
+          <dl class="adm-dl">
+            <dt>Phone</dt><dd>{{ o["phone"] }}</dd>
+            {% if o["email"] %}<dt>Email</dt><dd><a href="mailto:{{ o['email'] }}">{{ o["email"] }}</a></dd>{% endif %}
+            <dt>Address</dt><dd>{{ o["address"] }}, {{ o["city"] }}</dd>
+            <dt>Placed</dt><dd>{{ o["created"] }}</dd>
+            {% if o["notes"] %}<dt>Notes</dt><dd>{{ o["notes"] }}</dd>{% endif %}
+            {% if o["receipt_path"] %}
+            <dt>Receipt</dt>
+            <dd><a href="{{ url_for('uploads', fname=o['receipt_path']) }}" target="_blank">Payment receipt</a></dd>
+            {% endif %}
+            {% if o["payment_status"]=="paid" and o["paid_at"] %}
+            <dt>Paid at</dt><dd>{{ o["paid_at"] }}</dd>
+            {% endif %}
+          </dl>
+
+          <div>
+            <div class="adm-label mb-1">Items</div>
+            <ul class="stack-sm">
+              {% for it in json.loads(o["items_json"]) %}
+              <li class="row-tight">{{ it.product.name }} × {{ it.qty }} <span class="muted">= {{ it.line }}</span></li>
+              {% endfor %}
+            </ul>
+          </div>
+
+          <form method="post" class="adm-form">
+            <input type="hidden" name="csrf_token" value="{{ csrf }}">
+            <input type="hidden" name="oid" value="{{ o["id"] }}">
+            <input type="hidden" name="action" value="verify_payment">
+            <div class="adm-form-actions">
+              {% if o["payment_status"] == 'pending' %}
+              <button class="adm-btn ok sm" type="submit">{{ icon('check', 'sm') }} Verify payment</button>
+              {% elif o["payment_status"] == 'paid' %}
+              <input type="hidden" name="action" value="reject_payment">
+              <button class="adm-btn danger-soft sm" type="submit">{{ icon('x', 'sm') }} Reject payment</button>
+              {% else %}
+              <span class="muted small">Payment: {{ o["payment_status"] }}</span>
+              {% endif %}
+              <span class="spacer"></span>
+              <div class="adm-field" style="flex:0 1 220px">
+                <label for="o{{ o['id'] }}-status">Order status</label>
+                <select id="o{{ o['id'] }}-status" name="status">
+                  {% for s in ['pending','confirmed','packed','shipped','delivered','cancelled'] %}
+                  <option {{ 'selected' if s == o['status'].split(' — ')[0] else '' }}>{{ s }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+              <button class="adm-btn sm" type="submit">Update order</button>
+            </div>
+          </form>
+        </div>
+      </details>
+      {% endfor %}
+    </div>
+
+    <div class="adm-empty" id="order-empty" hidden>
+      <span class="adm-empty-icon">{{ icon('receipt', 'md') }}</span>
+      <h3>No matching orders</h3>
+      <p>Try a different filter keyword.</p>
+    </div>
+
+    {% if not orders %}
+    <div class="adm-empty">
+      <span class="adm-empty-icon">{{ icon('receipt', 'md') }}</span>
+      <h3>No orders yet</h3>
+      <p>Customer orders will appear here as soon as they are placed.</p>
+    </div>
+    {% endif %}
+  </div>
+</section>
 {% endblock %}
