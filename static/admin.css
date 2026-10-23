@@ -475,7 +475,7 @@
   padding: 10px 16px;
   border-radius: var(--a-radius-sm);
   border: 1px solid transparent;
-  background: var(--a-brand); color: #fff;
+  background: var(--a-brand, #2563eb); color: #fff;
   font: inherit; font-size: .875rem; font-weight: 600;
   line-height: 1.2;
   text-decoration: none; white-space: nowrap;
@@ -486,7 +486,7 @@
 .adm-btn:focus-visible { outline: none; box-shadow: var(--a-ring); }
 .adm-btn[disabled] { opacity: .5; pointer-events: none; }
 
-.adm-btn.secondary { background: var(--a-surface); color: var(--a-text); border-color: var(--a-border); }
+.adm-btn.secondary { background: var(--a-surface, #ffffff); color: var(--a-text, #0f172a); border-color: var(--a-border, #e2e8f0); }
 .adm-btn.secondary:hover { background: var(--a-surface-2); border-color: var(--a-brand); }
 .adm-btn.ghost { background: transparent; color: var(--a-text-2); border-color: var(--a-border); }
 .adm-btn.ghost:hover { background: var(--a-surface-2); color: var(--a-text); }
