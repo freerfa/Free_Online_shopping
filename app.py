@@ -710,7 +710,10 @@ def cart_add(pid):
     if not any(p.get("id") == pid for p in visible_products()):
         flash("That item is not available.", "danger")
         return redirect(url_for("shop"))
-    qty = max(1, min(99, int(request.form.get("qty", 1))))
+    try:
+        qty = max(1, min(99, int(request.form.get("qty", 1))))
+    except (TypeError, ValueError):
+        qty = 1
     cart = get_cart()
     cart[str(pid)] = min(99, cart.get(str(pid), 0) + qty)
     session["cart"] = cart
@@ -779,7 +782,7 @@ def checkout():
             flash("The payment system is currently disabled. Only Cash on Delivery is available.", "danger")
             return render_template("checkout.html", items=items, total=total, pms=pms, pay_enabled=pay_enabled)
         con = db()
-        con.execute("""INSERT INTO orders(customer_name,email,phone,address,city,notes,items_json,total,status,created,payment_method,payment_status)
+        cur = con.execute("""INSERT INTO orders(customer_name,email,phone,address,city,notes,items_json,total,status,created,payment_method,payment_status)
                            VALUES(?,?,?,?,?,?,?,?,?,?,?,?)""",
                     (html.escape(name), html.escape(email), html.escape(phone),
                      html.escape(address), html.escape(city), html.escape(notes),
@@ -793,9 +796,10 @@ def checkout():
             if str(p.get("id")) in cmap:
                 p["stock"] = max(0, int(p.get("stock",0)) - int(cmap[str(p["id"])]))
         con.execute("INSERT OR REPLACE INTO site_data(key,value) VALUES('products',?)", (json.dumps(products),))
-        con.commit(); con.close()
+        con.commit()
+        order_id = cur.lastrowid
+        con.close()
         session.pop("cart", None)
-        order_id = db().execute("SELECT MAX(id) FROM orders").fetchone()[0]
         is_cod = chosen.lower() == "cod"
         site = get_blob("site", {})
         if email:
@@ -1259,7 +1263,7 @@ def admin_dash():
 def admin_content():
     if request.method == "POST":
         site = get_blob("site", {})
-        for f in ["name","tagline","hero_title","hero_subtitle","hero_cta","currency","announcement","about","mission","contact_email","contact_phone","address","footer_text"]:
+        for f in ["name","tagline","hero_title","hero_subtitle","hero_cta","hero_image","currency","announcement","about","mission","contact_email","contact_phone","address","footer_text"]:
             if f in request.form:
                 site[f] = request.form[f].strip()[:2000]
     if "currencies" in request.form:

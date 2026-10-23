@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 {% block content %}
-<section class="hero"><h1>{{ site.get('hero_title') }}</h1><p>{{ site.get('hero_subtitle') }}</p><a class="btn" href="/shop">{{ site.get('hero_cta','Shop Now') }}</a></section>
+<section class="hero" {% if site.get('hero_image') %}style="background-image:linear-gradient(rgba(30,58,138,.75),rgba(180,83,9,.75)),url('{{ site.get('hero_image') }}');background-size:cover;background-position:center;"{% endif %}><h1>{{ site.get('hero_title') }}</h1><p>{{ site.get('hero_subtitle') }}</p><a class="btn" href="/shop">{{ site.get('hero_cta','Shop Now') }}</a></section>
 <h2>{{ 'index.categories'|t }}</h2>
 <div class="catbar">
 <a class="cat {{ 'active' if not request.args.get('cat') }}" href="/shop"><span class="icon">🌐</span>{{ 'index.all'|t }}</a>
